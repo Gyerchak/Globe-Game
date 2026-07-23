@@ -11,13 +11,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 find_package(GDAL REQUIRED)
 find_package(nlohmann_json REQUIRED)
-find_package(OpenMP REQUIRED)
+find_package(OpenMP REQUIRED)   # not used anymore but harmless
 
 include_directories(include)
 
 add_executable(projekt_001
-    Main.cpp               # <-- now in root
-    src/MosaicBuilder.cpp
+    Main.cpp
+    src/MapBuilder.cpp
 )
 
 target_link_libraries(projekt_001
