@@ -10,6 +10,7 @@
 #include <string>
 #include <iomanip>
 #include <sstream>
+#include <cstdlib>
 #include <omp.h>
 
 static std::string tilePath(int latDeg, int lonDeg, const std::string& baseDir) {

@@ -74,3 +74,13 @@ Output/
 output/
 map/
 Map/
+
+build/
+cmake-build-*/
+*.o
+*.so
+*.a
+*.exe
+.vscode/
+.idea/
+united/
