@@ -1,11 +1,11 @@
-#include "include/MosaicBuilder.hpp"
+#include "include/MapBuilder.hpp"
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>
 
 int main() {
-    std::ifstream ifs("/run/media/hubertg/SONIC/Projekt-001/config.json");
+    std::ifstream ifs("config.json");
     if (!ifs.is_open()) {
         std::cerr << "❌ Cannot open config.json" << std::endl;
         return 1;
@@ -15,7 +15,7 @@ int main() {
     ifs >> cfg;
 
     std::string dataPath = cfg.value("data_path", "");
-    std::string outPath = cfg.value("output_path", "./output/united");
+    std::string outPath = cfg.value("output_path", "./output");
 
     if (dataPath.empty()) {
         std::cerr << "❌ data_path missing in config.json" << std::endl;
