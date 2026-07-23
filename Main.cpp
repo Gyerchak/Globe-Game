@@ -1,4 +1,4 @@
-#include "MosaicBuilder.hpp"
+#include "include/MosaicBuilder.hpp"
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
@@ -15,7 +15,7 @@ int main() {
     ifs >> cfg;
 
     std::string dataPath = cfg.value("data_path", "");
-    std::string outPath = cfg.value("output_path", "./united");
+    std::string outPath = cfg.value("output_path", "./output/united");
 
     if (dataPath.empty()) {
         std::cerr << "❌ data_path missing in config.json" << std::endl;

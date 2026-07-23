@@ -83,4 +83,6 @@ cmake-build-*/
 *.exe
 .vscode/
 .idea/
-united/
+output/
+exe/
+projekt_001          # <-- the main executable lives in root now
