@@ -5,7 +5,7 @@
 #include <string>
 
 int main() {
-    std::ifstream ifs("config.json");
+    std::ifstream ifs("/run/media/hubertg/SONIC/Projekt-001/config.json");
     if (!ifs.is_open()) {
         std::cerr << "❌ Cannot open config.json" << std::endl;
         return 1;
