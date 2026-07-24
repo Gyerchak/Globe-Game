@@ -1,8 +1,10 @@
-// GenerateHexProvinces.cpp – fast, no set
+// GenerateHexProvinces.cpp
 // Compile: g++ -std=c++20 -O3 GenerateHexProvinces.cpp -o exe/GenerateHexProvinces -lgdal
+// Run: ./exe/GenerateHexProvinces
 
 #include <gdal_priv.h>
 #include <gdal_utils.h>
+
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -12,6 +14,7 @@
 #include <algorithm>
 #include <string>
 #include <cstdint>
+#include <chrono>
 
 namespace fs = std::filesystem;
 
@@ -22,6 +25,9 @@ constexpr double DX = std::sqrt(3.0) * HEX_RADIUS;
 constexpr double DY = 1.5 * HEX_RADIUS;
 constexpr uint8_t COASTAL_HEIGHT = 10;
 
+// -----------------------------------------------------------------------------
+// Hex geometry (pointy‑top)
+// -----------------------------------------------------------------------------
 struct Hex { int q, r; };
 
 static inline std::pair<double,double> hexToPixel(int q, int r, double xOff, double yOff) {
@@ -56,10 +62,14 @@ static inline std::pair<int,int> axialToOffset(int q, int r) {
     return {row, col};
 }
 
+// -----------------------------------------------------------------------------
+// Colour helpers
+// -----------------------------------------------------------------------------
 using Color = std::array<uint8_t, 3>;
 
+// Deterministic, unique colour from ID (24‑bit space)
 static inline Color colorFromID(uint32_t id) {
-    uint32_t hash = id * 2654435761u;
+    uint32_t hash = id * 2654435761u;   // golden ratio constant
     uint32_t rgb = hash & 0xFFFFFF;
     return {
         static_cast<uint8_t>((rgb >> 16) & 0xFF),
@@ -68,6 +78,7 @@ static inline Color colorFromID(uint32_t id) {
     };
 }
 
+// Build the original 26‑point colour palette (for height map)
 static std::array<Color, 256> buildPalette() {
     struct Point { int val; uint8_t r,g,b; };
     std::vector<Point> pts = {
@@ -114,10 +125,16 @@ static std::array<Color, 256> buildPalette() {
     return pal;
 }
 
+// -----------------------------------------------------------------------------
+// Main
+// -----------------------------------------------------------------------------
 int main() {
     GDALAllRegister();
     std::ios::sync_with_stdio(false);
 
+    auto startTime = std::chrono::steady_clock::now();
+
+    // ---------- Paths ----------
     fs::path inPath = fs::current_path() / "input" / "heightmap_8bit.tif";
     fs::path outHex = fs::current_path() / "output" / "hexheightmap.tif";
     fs::path outHexCol = fs::current_path() / "output" / "hexheightmap_color.tif";
@@ -128,13 +145,12 @@ int main() {
     fs::path outSeaMap = fs::current_path() / "output" / "seaprovincemap.tif";
 
     if (!fs::exists(inPath)) {
-        std::cerr << "❌ Input heightmap_8bit.tif not found in input/\n";
+        std::cerr << "❌ Input file not found: " << inPath << "\n";
         return 1;
     }
     fs::create_directories(outHex.parent_path());
 
-    auto palette = buildPalette();
-
+    // ---------- Open source ----------
     GDALDataset* srcDS = (GDALDataset*)GDALOpen(inPath.c_str(), GA_ReadOnly);
     if (!srcDS) {
         std::cerr << "❌ Could not open " << inPath << "\n";
@@ -145,12 +161,14 @@ int main() {
     int height = srcDS->GetRasterYSize();
     GDALRasterBand* band = srcDS->GetRasterBand(1);
 
+    // ---------- Hex grid dimensions ----------
     double xOff = 0.0, yOff = 0.0;
     int cols = static_cast<int>(std::ceil(width / DX)) + 2;
     int rows = static_cast<int>(std::ceil(height / DY)) + 2;
-    std::cout << "🗺️  Hex grid (radius 6): " << cols << " x " << rows << " = " << (cols * rows) << " cells\n";
+    std::cout << "🗺️  Hex grid (radius " << HEX_RADIUS << "): "
+              << cols << " x " << rows << " = " << (cols * rows) << " cells\n";
 
-    // Structures for statistics
+    // ---------- Phase 1: accumulate statistics per hex ----------
     std::vector<std::vector<uint64_t>> sumLand(rows, std::vector<uint64_t>(cols, 0));
     std::vector<std::vector<uint32_t>> countLand(rows, std::vector<uint32_t>(cols, 0));
     std::vector<std::vector<uint32_t>> countSea(rows, std::vector<uint32_t>(cols, 0));
@@ -177,8 +195,9 @@ int main() {
         }
         if (y % 10000 == 0) std::cout << "  row " << y << " / " << height << "\n";
     }
+    std::cout << "✅ Phase 1 done.\n";
 
-    // Classify hexes
+    // ---------- Classify hexes ----------
     std::vector<std::vector<bool>> cellIsLand(rows, std::vector<bool>(cols, false));
     std::vector<std::vector<uint8_t>> cellHeight(rows, std::vector<uint8_t>(cols, 0));
     std::vector<std::vector<bool>> cellIsCoastal(rows, std::vector<bool>(cols, false));
@@ -186,24 +205,32 @@ int main() {
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
             if (countLand[r][c] > 0 && countSea[r][c] == 0) {
+                // Interior land
                 cellIsLand[r][c] = true;
+                cellIsCoastal[r][c] = false;
                 uint8_t avg = static_cast<uint8_t>(sumLand[r][c] / countLand[r][c]);
                 cellHeight[r][c] = avg;
             } else if (countLand[r][c] == 0 && countSea[r][c] > 0) {
+                // Pure sea
                 cellIsLand[r][c] = false;
+                cellIsCoastal[r][c] = false;
                 cellHeight[r][c] = 0;
             } else if (countLand[r][c] > 0 && countSea[r][c] > 0) {
+                // Coastal – treat as land for provinces
                 cellIsLand[r][c] = true;
                 cellIsCoastal[r][c] = true;
                 cellHeight[r][c] = COASTAL_HEIGHT;
             } else {
+                // Empty (should not happen)
                 cellIsLand[r][c] = false;
+                cellIsCoastal[r][c] = false;
                 cellHeight[r][c] = 0;
             }
         }
     }
+    std::cout << "✅ Classification done.\n";
 
-    // Write hexheightmap
+    // ---------- Write hexheightmap.tif and hexheightmap_color.tif ----------
     GDALDriver* drv = GetGDALDriverManager()->GetDriverByName("GTiff");
     char** tifOpts = nullptr;
     tifOpts = CSLSetNameValue(tifOpts, "COMPRESS", "LZW");
@@ -213,9 +240,10 @@ int main() {
     tifOpts = CSLSetNameValue(tifOpts, "BLOCKYSIZE", "512");
 
     GDALDataset* hexDS = drv->Create(outHex.c_str(), width, height, 1, GDT_Byte, tifOpts);
-    if (!hexDS) { std::cerr << "❌ Failed to create " << outHex << "\n"; return 1; }
+    if (!hexDS) { std::cerr << "❌ Could not create " << outHex << "\n"; return 1; }
     GDALDataset* hexColDS = drv->Create(outHexCol.c_str(), width, height, 3, GDT_Byte, tifOpts);
-    if (!hexColDS) { std::cerr << "❌ Failed to create " << outHexCol << "\n"; return 1; }
+    if (!hexColDS) { std::cerr << "❌ Could not create " << outHexCol << "\n"; return 1; }
+
     double geoTransform[6];
     srcDS->GetGeoTransform(geoTransform);
     hexDS->SetGeoTransform(geoTransform);
@@ -223,7 +251,9 @@ int main() {
     hexColDS->SetGeoTransform(geoTransform);
     hexColDS->SetProjection(srcDS->GetProjectionRef());
 
+    auto palette = buildPalette();
     std::vector<uint8_t> rowHt(width), rowR(width), rowG(width), rowB(width);
+
     std::cout << "✍️  Writing hexheightmap.tif and hexheightmap_color.tif...\n";
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -249,14 +279,15 @@ int main() {
     }
     GDALClose(hexDS);
     GDALClose(hexColDS);
-    GDALClose(srcDS);
+    std::cout << "✅ hexheightmap files written.\n";
 
-    // Copy to input
+    // Copy hexheightmap.tif to input/ for later use
     fs::path inHex = fs::current_path() / "input" / "hexheightmap.tif";
     fs::copy_file(outHex, inHex, fs::copy_options::overwrite_existing);
     std::cout << "📁 Copied hexheightmap.tif to input/\n";
 
-    // ---------- Province generation (fast, no set) ----------
+    // ---------- Phase 2: Province generation ----------
+    // Collect land and sea hexes
     std::vector<std::pair<int,int>> landCells, seaCells;
     landCells.reserve(rows * cols / 2);
     seaCells.reserve(rows * cols / 2);
@@ -275,13 +306,14 @@ int main() {
     std::cout << "🏛️  Land hexes (including coastal): " << numLand
               << ", Sea hexes: " << numSea << "\n";
 
-    // Assign IDs
+    // Assign IDs: land = 1..numLand, sea = numLand+1..numLand+numSea
     std::vector<std::vector<uint32_t>> cellId(rows, std::vector<uint32_t>(cols, 0));
     uint32_t id = 1;
     for (auto &p : landCells) cellId[p.first][p.second] = id++;
     for (auto &p : seaCells)  cellId[p.first][p.second] = id++;
+    std::cout << "✅ Assigned " << (id-1) << " province IDs.\n";
 
-    // Write text files
+    // Write landprovinces.txt
     std::cout << "📝 Writing landprovinces.txt...\n";
     std::ofstream ltxt(outLandTxt);
     if (!ltxt) { std::cerr << "❌ Cannot create " << outLandTxt << "\n"; return 1; }
@@ -291,8 +323,9 @@ int main() {
         if (i % 100000 == 0) std::cout << "  wrote " << i << " land entries\r" << std::flush;
     }
     ltxt.close();
-    std::cout << "\n✅ Land provinces written.\n";
+    std::cout << "\n✅ landprovinces.txt written.\n";
 
+    // Write seaprovinces.txt
     std::cout << "📝 Writing seaprovinces.txt...\n";
     std::ofstream stxt(outSeaTxt);
     if (!stxt) { std::cerr << "❌ Cannot create " << outSeaTxt << "\n"; return 1; }
@@ -303,28 +336,28 @@ int main() {
         if (i % 100000 == 0) std::cout << "  wrote " << i << " sea entries\r" << std::flush;
     }
     stxt.close();
-    std::cout << "\n✅ Sea provinces written.\n";
+    std::cout << "\n✅ seaprovinces.txt written.\n";
 
-    // province.bin
+    // ---------- Write province.bin (32-bit) ----------
     std::ofstream foutBin(outBin, std::ios::binary);
     if (!foutBin) { std::cerr << "❌ Cannot create " << outBin << "\n"; return 1; }
+    std::cout << "✍️  Writing province.bin...\n";
 
-    // Land & sea maps
+    // Create landprovincemap.tif and seaprovincemap.tif
     GDALDataset* landMapDS = drv->Create(outLandMap.c_str(), width, height, 3, GDT_Byte, tifOpts);
     if (!landMapDS) { std::cerr << "❌ Cannot create " << outLandMap << "\n"; return 1; }
     landMapDS->SetGeoTransform(geoTransform);
-    landMapDS->SetProjection("WGS84");
+    landMapDS->SetProjection(srcDS->GetProjectionRef());
 
     GDALDataset* seaMapDS = drv->Create(outSeaMap.c_str(), width, height, 3, GDT_Byte, tifOpts);
     if (!seaMapDS) { std::cerr << "❌ Cannot create " << outSeaMap << "\n"; return 1; }
     seaMapDS->SetGeoTransform(geoTransform);
-    seaMapDS->SetProjection("WGS84");
+    seaMapDS->SetProjection(srcDS->GetProjectionRef());
 
     std::vector<uint32_t> rowBin32(width);
     std::vector<uint8_t> lR(width), lG(width), lB(width);
     std::vector<uint8_t> sR(width), sG(width), sB(width);
 
-    std::cout << "✍️  Writing province.bin, landprovincemap.tif, seaprovincemap.tif...\n";
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             Hex h = pixelToHex(static_cast<double>(x), static_cast<double>(y), xOff, yOff);
@@ -336,6 +369,7 @@ int main() {
             if (row >= rows) row = rows - 1;
             uint32_t provId = cellId[row][col];
             rowBin32[x] = provId;
+
             bool isLand = cellIsLand[row][col] || cellIsCoastal[row][col];
             if (isLand) {
                 auto c = colorFromID(provId);
@@ -348,6 +382,7 @@ int main() {
                 lR[x] = lG[x] = lB[x] = 0;
             }
         }
+
         foutBin.write(reinterpret_cast<const char*>(rowBin32.data()), width * sizeof(uint32_t));
         landMapDS->GetRasterBand(1)->RasterIO(GF_Write, 0, y, width, 1, lR.data(), width, 1, GDT_Byte, 0, 0);
         landMapDS->GetRasterBand(2)->RasterIO(GF_Write, 0, y, width, 1, lG.data(), width, 1, GDT_Byte, 0, 0);
@@ -355,17 +390,22 @@ int main() {
         seaMapDS->GetRasterBand(1)->RasterIO(GF_Write, 0, y, width, 1, sR.data(), width, 1, GDT_Byte, 0, 0);
         seaMapDS->GetRasterBand(2)->RasterIO(GF_Write, 0, y, width, 1, sG.data(), width, 1, GDT_Byte, 0, 0);
         seaMapDS->GetRasterBand(3)->RasterIO(GF_Write, 0, y, width, 1, sB.data(), width, 1, GDT_Byte, 0, 0);
+
         if (y % 10000 == 0) std::cout << "  row " << y << " / " << height << "\n";
     }
 
     foutBin.close();
     GDALClose(landMapDS);
     GDALClose(seaMapDS);
+    GDALClose(srcDS);
 
-    std::cout << "✅ All done!\n";
+    // ---------- Done ----------
+    auto endTime = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count();
+    std::cout << "\n🎉 All done in " << elapsed << " seconds!\n";
     std::cout << "  hexheightmap.tif         : " << outHex << "\n";
     std::cout << "  hexheightmap_color.tif   : " << outHexCol << "\n";
-    std::cout << "  province.bin             : " << outBin << "\n";
+    std::cout << "  province.bin             : " << outBin << " (~" << (width*height*4/1024/1024) << " MB)\n";
     std::cout << "  landprovinces.txt        : " << outLandTxt << "\n";
     std::cout << "  seaprovinces.txt         : " << outSeaTxt << "\n";
     std::cout << "  landprovincemap.tif      : " << outLandMap << "\n";
