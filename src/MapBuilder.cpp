@@ -28,7 +28,7 @@ bool buildAllMosaics(const std::string& dataPath, const std::string& outputPath)
     std::string cmd = "gdalwarp -of GTiff -co COMPRESS=LZW -co PREDICTOR=2 "
                       "-co TILED=YES -co BLOCKXSIZE=512 -co BLOCKYSIZE=512 "
                       "-ts 65536 32768 -r lanczos -overwrite "
-                      "-wm 4096 -multi "
+                      "-wm 8192 -multi "
                       "-wo NUM_THREADS=" + std::to_string(numThreads) + " "
                       "-te -180 -90 180 90 \"" +
                       vrtPath + "\" \"" + outFile + "\"";
