@@ -22,7 +22,7 @@ constexpr int WIDTH = 65536;
 constexpr int HEIGHT = 32768;
 
 // Hexagon parameters (pointy‑top)
-constexpr double HEX_RADIUS = 7.0;          // pixels (centre to corner)
+constexpr double HEX_RADIUS = 6.0;          // pixels (centre to corner)
 constexpr double DX = std::sqrt(3.0) * HEX_RADIUS;   // horizontal spacing
 constexpr double DY = 1.5 * HEX_RADIUS;              // vertical spacing
 
