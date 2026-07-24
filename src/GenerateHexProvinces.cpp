@@ -22,7 +22,7 @@ namespace fs = std::filesystem;
 
 constexpr int WIDTH = 65536;
 constexpr int HEIGHT = 32768;
-constexpr double HEX_RADIUS = 9.0;
+constexpr double HEX_RADIUS = 6.0;          // <--- changed from 9 to 6
 constexpr double DX = std::sqrt(3.0) * HEX_RADIUS;
 constexpr double DY = 1.5 * HEX_RADIUS;
 constexpr uint8_t COASTAL_HEIGHT = 10;
@@ -177,8 +177,8 @@ int main() {
     int cols = static_cast<int>(std::ceil(width / DX)) + 2;
     int rows = static_cast<int>(std::ceil(height / DY)) + 2;
 
-    std::cout << "🗺️  Hex grid: " << cols << " x " << rows << " = "
-              << (cols * rows) << " cells\n";
+    std::cout << "🗺️  Hex grid (radius " << HEX_RADIUS << "): " 
+              << cols << " x " << rows << " = " << (cols * rows) << " cells\n";
 
     // Structures to accumulate sums and counts per hex
     std::vector<std::vector<uint64_t>> sumLand(rows, std::vector<uint64_t>(cols, 0));
@@ -310,9 +310,6 @@ int main() {
     // -------------------------------------------------------------------------
     // Phase 2: Generate provinces using the hex grid information we already have
     // -------------------------------------------------------------------------
-    // We have cellIsLand, cellIsCoastal, cellHeight, and the grid dimensions.
-    // For provinces, we assign a unique ID to every hex cell (land and sea).
-
     std::vector<std::pair<int, int>> landCells, seaCells;
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
