@@ -15,6 +15,7 @@
 #include <string>
 #include <cstdint>
 #include <chrono>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
@@ -66,6 +67,12 @@ static inline std::pair<int,int> axialToOffset(int q, int r) {
     int col = q + (r - (r & 1)) / 2;
     int row = r;
     return {row, col};
+}
+
+static inline Hex offsetToAxial(int row, int col) {
+    int q = col - (row - (row & 1)) / 2;
+    int r = row;
+    return {q, r};
 }
 
 // -----------------------------------------------------------------------------
@@ -287,7 +294,8 @@ int main() {
     fs::copy_file(outHex, inHex, fs::copy_options::overwrite_existing);
     printMsg("📁 Copied hexheightmap.tif to input/\n");
 
-    // ---------- Phase 2: Province generation ----------
+    // ---------- Phase 2: Province generation with east‑west wrap merging ----------
+    // Collect land and sea cells
     std::vector<std::pair<int,int>> landCells, seaCells;
     landCells.reserve(rows * cols / 2);
     seaCells.reserve(rows * cols / 2);
@@ -301,25 +309,74 @@ int main() {
         }
     }
 
-    uint32_t numLand = static_cast<uint32_t>(landCells.size());
-    uint32_t numSea  = static_cast<uint32_t>(seaCells.size());
-    printMsg("🏛️  Land hexes (including coastal): ", numLand, ", Sea hexes: ", numSea, "\n");
-
-    // Assign unique IDs: land = 1..numLand, sea = numLand+1..numLand+numSea
+    // Initial assignment of IDs
     std::vector<std::vector<uint32_t>> cellId(rows, std::vector<uint32_t>(cols, 0));
     uint32_t id = 1;
     for (auto &p : landCells) cellId[p.first][p.second] = id++;
     for (auto &p : seaCells)  cellId[p.first][p.second] = id++;
-    printMsg("✅ Assigned ", (id-1), " province IDs.\n");
+    printMsg("🔗 Initial IDs assigned: ", (id-1), "\n");
 
-    // -------------------------------------------------------------------------
-    // Write text files
-    // -------------------------------------------------------------------------
-    // Combined provinces.txt (all IDs, no names)
+    // ---------- Merge east‑west edge hexes that are neighbours across the wrap ----------
+    printMsg("🔄 Merging east‑west edge hexes...\n");
+    int mergedCount = 0;
+    for (int r = 0; r < rows; ++r) {
+        int leftId = cellId[r][0];
+        int rightId = cellId[r][cols-1];
+        if (leftId == 0 || rightId == 0) continue;
+
+        bool leftIsLand = cellIsLand[r][0] || cellIsCoastal[r][0];
+        bool rightIsLand = cellIsLand[r][cols-1] || cellIsCoastal[r][cols-1];
+        if (leftIsLand != rightIsLand) continue;
+
+        Hex leftAx = offsetToAxial(r, 0);
+        Hex rightAx = offsetToAxial(r, cols-1);
+        Hex eastNeighbor = {rightAx.q + 1, rightAx.r};
+        auto [nr, nc] = axialToOffset(eastNeighbor.q, eastNeighbor.r);
+        if (nr == r && nc == 0) {
+            uint32_t minId = std::min(leftId, rightId);
+            uint32_t maxId = std::max(leftId, rightId);
+            for (int rr = 0; rr < rows; ++rr) {
+                for (int cc = 0; cc < cols; ++cc) {
+                    if (cellId[rr][cc] == maxId) {
+                        cellId[rr][cc] = minId;
+                    }
+                }
+            }
+            mergedCount++;
+        }
+    }
+    printMsg("✅ Merged ", mergedCount, " edge pairs.\n");
+
+    // ---------- Renumber IDs to be contiguous ----------
+    printMsg("🔢 Renumbering IDs to be contiguous...\n");
+    std::unordered_map<uint32_t, uint32_t> oldToNew;
+    uint32_t newId = 1;
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            uint32_t old = cellId[r][c];
+            if (old == 0) continue;
+            auto it = oldToNew.find(old);
+            if (it == oldToNew.end()) {
+                oldToNew[old] = newId++;
+            }
+        }
+    }
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            if (cellId[r][c] != 0) {
+                cellId[r][c] = oldToNew[cellId[r][c]];
+            }
+        }
+    }
+    uint32_t totalProvinces = newId - 1;
+    printMsg("✅ Total provinces after merging and renumbering: ", totalProvinces, "\n");
+
+    // ---------- Write text files (only ID and RGB, no names) ----------
+    // Combined provinces.txt
     printMsg("📝 Writing provinces.txt (combined)...\n");
     std::ofstream allTxt(outAllTxt);
     if (!allTxt) { std::cerr << "❌ Cannot create " << outAllTxt << "\n"; return 1; }
-    for (uint32_t i = 1; i < id; ++i) {
+    for (uint32_t i = 1; i <= totalProvinces; ++i) {
         auto c = colorFromID(i);
         allTxt << i << ";" << (int)c[0] << " " << (int)c[1] << " " << (int)c[2] << "\n";
         if (i % 100000 == 0) printMsg("  wrote ", i, " entries\n");
@@ -327,39 +384,53 @@ int main() {
     allTxt.close();
     printMsg("✅ provinces.txt written.\n");
 
-    // Land provinces (with names)
+    // Land provinces (ID;RGB only)
     printMsg("📝 Writing landprovinces.txt...\n");
     std::ofstream ltxt(outLandTxt);
     if (!ltxt) { std::cerr << "❌ Cannot create " << outLandTxt << "\n"; return 1; }
-    for (uint32_t i = 1; i <= numLand; ++i) {
-        auto c = colorFromID(i);
-        ltxt << i << ";Province_Land_" << i << ";" << (int)c[0] << " " << (int)c[1] << " " << (int)c[2] << "\n";
-        if (i % 100000 == 0) printMsg("  wrote ", i, " land entries\n");
+    uint32_t landCount = 0;
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            if (cellIsLand[r][c] || cellIsCoastal[r][c]) {
+                uint32_t id = cellId[r][c];
+                if (id > 0) {
+                    landCount++;
+                    auto col = colorFromID(id);
+                    ltxt << id << ";" << (int)col[0] << " " << (int)col[1] << " " << (int)col[2] << "\n";
+                    if (landCount % 100000 == 0) printMsg("  wrote ", landCount, " land entries\n");
+                }
+            }
+        }
     }
     ltxt.close();
-    printMsg("✅ landprovinces.txt written.\n");
+    printMsg("✅ landprovinces.txt written (", landCount, " entries).\n");
 
-    // Sea provinces (with names)
+    // Sea provinces (ID;RGB only)
     printMsg("📝 Writing seaprovinces.txt...\n");
     std::ofstream stxt(outSeaTxt);
     if (!stxt) { std::cerr << "❌ Cannot create " << outSeaTxt << "\n"; return 1; }
-    for (uint32_t i = 1; i <= numSea; ++i) {
-        uint32_t globalId = numLand + i;
-        auto c = colorFromID(globalId);
-        stxt << globalId << ";Province_Sea_" << i << ";" << (int)c[0] << " " << (int)c[1] << " " << (int)c[2] << "\n";
-        if (i % 100000 == 0) printMsg("  wrote ", i, " sea entries\n");
+    uint32_t seaCount = 0;
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            if (!(cellIsLand[r][c] || cellIsCoastal[r][c])) {
+                uint32_t id = cellId[r][c];
+                if (id > 0) {
+                    seaCount++;
+                    auto col = colorFromID(id);
+                    stxt << id << ";" << (int)col[0] << " " << (int)col[1] << " " << (int)col[2] << "\n";
+                    if (seaCount % 100000 == 0) printMsg("  wrote ", seaCount, " sea entries\n");
+                }
+            }
+        }
     }
     stxt.close();
-    printMsg("✅ seaprovinces.txt written.\n");
+    printMsg("✅ seaprovinces.txt written (", seaCount, " entries).\n");
 
-    // -------------------------------------------------------------------------
-    // Write province.bin (32-bit) and the three coloured maps
-    // -------------------------------------------------------------------------
+    // ---------- Write province.bin and the three coloured maps ----------
     printMsg("✍️  Writing province.bin, worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif...\n");
     std::ofstream foutBin(outBin, std::ios::binary);
     if (!foutBin) { std::cerr << "❌ Cannot create " << outBin << "\n"; return 1; }
 
-    // Create three colour maps
     GDALDataset* worldMapDS = drv->Create(outWorldMap.c_str(), width, height, 3, GDT_Byte, tifOpts);
     if (!worldMapDS) { std::cerr << "❌ Cannot create " << outWorldMap << "\n"; return 1; }
     worldMapDS->SetGeoTransform(geoTransform);
@@ -394,15 +465,17 @@ int main() {
 
             bool isLand = cellIsLand[row][col] || cellIsCoastal[row][col];
             auto c = colorFromID(provId);
-            // World map: always show colour
             wR[x] = c[0]; wG[x] = c[1]; wB[x] = c[2];
-            // Land map: only land gets colour, sea black
-            if (isLand) {
+            if (isLand && provId != 0) {
                 lR[x] = c[0]; lG[x] = c[1]; lB[x] = c[2];
                 sR[x] = sG[x] = sB[x] = 0;
             } else {
                 lR[x] = lG[x] = lB[x] = 0;
-                sR[x] = c[0]; sG[x] = c[1]; sB[x] = c[2];
+                if (provId != 0) {
+                    sR[x] = c[0]; sG[x] = c[1]; sB[x] = c[2];
+                } else {
+                    sR[x] = sG[x] = sB[x] = 0;
+                }
             }
         }
 
