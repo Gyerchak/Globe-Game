@@ -15,7 +15,6 @@
 #include <string>
 #include <cstdint>
 #include <chrono>
-#include <thread>
 
 namespace fs = std::filesystem;
 
@@ -26,7 +25,7 @@ constexpr double DX = std::sqrt(3.0) * HEX_RADIUS;
 constexpr double DY = 1.5 * HEX_RADIUS;
 constexpr uint8_t COASTAL_HEIGHT = 10;
 
-// Helper to print with flush
+// Helper: print with flush
 template<typename... Args>
 void printMsg(Args&&... args) {
     (std::cout << ... << std::forward<Args>(args)) << std::flush;
@@ -144,20 +143,20 @@ int main() {
     fs::path outHex = fs::current_path() / "output" / "hexheightmap.tif";
     fs::path outHexCol = fs::current_path() / "output" / "hexheightmap_color.tif";
     fs::path outBin = fs::current_path() / "output" / "province.bin";
-    fs::path outLandTxt = fs::current_path() / "output" / "landprovinces.txt";
-    fs::path outSeaTxt = fs::current_path() / "output" / "seaprovinces.txt";
+    fs::path outWorldMap = fs::current_path() / "output" / "worldprovincemap.tif";
     fs::path outLandMap = fs::current_path() / "output" / "landprovincemap.tif";
     fs::path outSeaMap = fs::current_path() / "output" / "seaprovincemap.tif";
+    fs::path outAllTxt = fs::current_path() / "output" / "provinces.txt";
+    fs::path outLandTxt = fs::current_path() / "output" / "landprovinces.txt";
+    fs::path outSeaTxt = fs::current_path() / "output" / "seaprovinces.txt";
 
     if (!fs::exists(inPath)) {
         std::cerr << "❌ Input file not found: " << inPath << "\n";
         return 1;
     }
     printMsg("✅ Input found: ", inPath.string(), "\n");
-
     fs::create_directories(outHex.parent_path());
 
-    // Open source
     GDALDataset* srcDS = (GDALDataset*)GDALOpen(inPath.c_str(), GA_ReadOnly);
     if (!srcDS) {
         std::cerr << "❌ Could not open " << inPath << "\n";
@@ -169,13 +168,12 @@ int main() {
     int height = srcDS->GetRasterYSize();
     GDALRasterBand* band = srcDS->GetRasterBand(1);
 
-    // Hex grid dimensions
     double xOff = 0.0, yOff = 0.0;
     int cols = static_cast<int>(std::ceil(width / DX)) + 2;
     int rows = static_cast<int>(std::ceil(height / DY)) + 2;
     printMsg("🗺️  Hex grid (radius 6): ", cols, " x ", rows, " = ", (cols * rows), " cells\n");
 
-    // Phase 1: accumulate statistics
+    // ---------- Phase 1: accumulate statistics ----------
     std::vector<std::vector<uint64_t>> sumLand(rows, std::vector<uint64_t>(cols, 0));
     std::vector<std::vector<uint32_t>> countLand(rows, std::vector<uint32_t>(cols, 0));
     std::vector<std::vector<uint32_t>> countSea(rows, std::vector<uint32_t>(cols, 0));
@@ -200,13 +198,11 @@ int main() {
                 countSea[row][col]++;
             }
         }
-        if (y % 10000 == 0) {
-            printMsg("  row ", y, " / ", height, "\n");
-        }
+        if (y % 10000 == 0) printMsg("  row ", y, " / ", height, "\n");
     }
     printMsg("✅ Phase 1 done.\n");
 
-    // Classify hexes
+    // ---------- Classify hexes ----------
     std::vector<std::vector<bool>> cellIsLand(rows, std::vector<bool>(cols, false));
     std::vector<std::vector<uint8_t>> cellHeight(rows, std::vector<uint8_t>(cols, 0));
     std::vector<std::vector<bool>> cellIsCoastal(rows, std::vector<bool>(cols, false));
@@ -235,7 +231,7 @@ int main() {
     }
     printMsg("✅ Classification done.\n");
 
-    // Write hexheightmap
+    // ---------- Write hexheightmap.tif and hexheightmap_color.tif ----------
     GDALDriver* drv = GetGDALDriverManager()->GetDriverByName("GTiff");
     char** tifOpts = nullptr;
     tifOpts = CSLSetNameValue(tifOpts, "COMPRESS", "LZW");
@@ -309,14 +305,29 @@ int main() {
     uint32_t numSea  = static_cast<uint32_t>(seaCells.size());
     printMsg("🏛️  Land hexes (including coastal): ", numLand, ", Sea hexes: ", numSea, "\n");
 
-    // Assign IDs
+    // Assign unique IDs: land = 1..numLand, sea = numLand+1..numLand+numSea
     std::vector<std::vector<uint32_t>> cellId(rows, std::vector<uint32_t>(cols, 0));
     uint32_t id = 1;
     for (auto &p : landCells) cellId[p.first][p.second] = id++;
     for (auto &p : seaCells)  cellId[p.first][p.second] = id++;
     printMsg("✅ Assigned ", (id-1), " province IDs.\n");
 
-    // Write landprovinces.txt
+    // -------------------------------------------------------------------------
+    // Write text files
+    // -------------------------------------------------------------------------
+    // Combined provinces.txt (all IDs, no names)
+    printMsg("📝 Writing provinces.txt (combined)...\n");
+    std::ofstream allTxt(outAllTxt);
+    if (!allTxt) { std::cerr << "❌ Cannot create " << outAllTxt << "\n"; return 1; }
+    for (uint32_t i = 1; i < id; ++i) {
+        auto c = colorFromID(i);
+        allTxt << i << ";" << (int)c[0] << " " << (int)c[1] << " " << (int)c[2] << "\n";
+        if (i % 100000 == 0) printMsg("  wrote ", i, " entries\n");
+    }
+    allTxt.close();
+    printMsg("✅ provinces.txt written.\n");
+
+    // Land provinces (with names)
     printMsg("📝 Writing landprovinces.txt...\n");
     std::ofstream ltxt(outLandTxt);
     if (!ltxt) { std::cerr << "❌ Cannot create " << outLandTxt << "\n"; return 1; }
@@ -328,23 +339,31 @@ int main() {
     ltxt.close();
     printMsg("✅ landprovinces.txt written.\n");
 
-    // Write seaprovinces.txt
+    // Sea provinces (with names)
     printMsg("📝 Writing seaprovinces.txt...\n");
     std::ofstream stxt(outSeaTxt);
     if (!stxt) { std::cerr << "❌ Cannot create " << outSeaTxt << "\n"; return 1; }
     for (uint32_t i = 1; i <= numSea; ++i) {
-        auto c = colorFromID(numLand + i);
         uint32_t globalId = numLand + i;
+        auto c = colorFromID(globalId);
         stxt << globalId << ";Province_Sea_" << i << ";" << (int)c[0] << " " << (int)c[1] << " " << (int)c[2] << "\n";
         if (i % 100000 == 0) printMsg("  wrote ", i, " sea entries\n");
     }
     stxt.close();
     printMsg("✅ seaprovinces.txt written.\n");
 
-    // Write province.bin and the two coloured maps
-    printMsg("✍️  Writing province.bin, landprovincemap.tif, seaprovincemap.tif...\n");
+    // -------------------------------------------------------------------------
+    // Write province.bin (32-bit) and the three coloured maps
+    // -------------------------------------------------------------------------
+    printMsg("✍️  Writing province.bin, worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif...\n");
     std::ofstream foutBin(outBin, std::ios::binary);
     if (!foutBin) { std::cerr << "❌ Cannot create " << outBin << "\n"; return 1; }
+
+    // Create three colour maps
+    GDALDataset* worldMapDS = drv->Create(outWorldMap.c_str(), width, height, 3, GDT_Byte, tifOpts);
+    if (!worldMapDS) { std::cerr << "❌ Cannot create " << outWorldMap << "\n"; return 1; }
+    worldMapDS->SetGeoTransform(geoTransform);
+    worldMapDS->SetProjection(srcDS->GetProjectionRef());
 
     GDALDataset* landMapDS = drv->Create(outLandMap.c_str(), width, height, 3, GDT_Byte, tifOpts);
     if (!landMapDS) { std::cerr << "❌ Cannot create " << outLandMap << "\n"; return 1; }
@@ -357,6 +376,7 @@ int main() {
     seaMapDS->SetProjection(srcDS->GetProjectionRef());
 
     std::vector<uint32_t> rowBin32(width);
+    std::vector<uint8_t> wR(width), wG(width), wB(width);
     std::vector<uint8_t> lR(width), lG(width), lB(width);
     std::vector<uint8_t> sR(width), sG(width), sB(width);
 
@@ -373,19 +393,23 @@ int main() {
             rowBin32[x] = provId;
 
             bool isLand = cellIsLand[row][col] || cellIsCoastal[row][col];
+            auto c = colorFromID(provId);
+            // World map: always show colour
+            wR[x] = c[0]; wG[x] = c[1]; wB[x] = c[2];
+            // Land map: only land gets colour, sea black
             if (isLand) {
-                auto c = colorFromID(provId);
                 lR[x] = c[0]; lG[x] = c[1]; lB[x] = c[2];
                 sR[x] = sG[x] = sB[x] = 0;
             } else {
-                uint32_t seaIdx = provId - numLand;
-                auto c = colorFromID(numLand + seaIdx);
-                sR[x] = c[0]; sG[x] = c[1]; sB[x] = c[2];
                 lR[x] = lG[x] = lB[x] = 0;
+                sR[x] = c[0]; sG[x] = c[1]; sB[x] = c[2];
             }
         }
 
         foutBin.write(reinterpret_cast<const char*>(rowBin32.data()), width * sizeof(uint32_t));
+        worldMapDS->GetRasterBand(1)->RasterIO(GF_Write, 0, y, width, 1, wR.data(), width, 1, GDT_Byte, 0, 0);
+        worldMapDS->GetRasterBand(2)->RasterIO(GF_Write, 0, y, width, 1, wG.data(), width, 1, GDT_Byte, 0, 0);
+        worldMapDS->GetRasterBand(3)->RasterIO(GF_Write, 0, y, width, 1, wB.data(), width, 1, GDT_Byte, 0, 0);
         landMapDS->GetRasterBand(1)->RasterIO(GF_Write, 0, y, width, 1, lR.data(), width, 1, GDT_Byte, 0, 0);
         landMapDS->GetRasterBand(2)->RasterIO(GF_Write, 0, y, width, 1, lG.data(), width, 1, GDT_Byte, 0, 0);
         landMapDS->GetRasterBand(3)->RasterIO(GF_Write, 0, y, width, 1, lB.data(), width, 1, GDT_Byte, 0, 0);
@@ -397,6 +421,7 @@ int main() {
     }
 
     foutBin.close();
+    GDALClose(worldMapDS);
     GDALClose(landMapDS);
     GDALClose(seaMapDS);
     GDALClose(srcDS);
@@ -407,10 +432,12 @@ int main() {
     printMsg("  hexheightmap.tif         : ", outHex.string(), "\n");
     printMsg("  hexheightmap_color.tif   : ", outHexCol.string(), "\n");
     printMsg("  province.bin             : ", outBin.string(), " (~", (width*height*4/1024/1024), " MB)\n");
-    printMsg("  landprovinces.txt        : ", outLandTxt.string(), "\n");
-    printMsg("  seaprovinces.txt         : ", outSeaTxt.string(), "\n");
+    printMsg("  worldprovincemap.tif     : ", outWorldMap.string(), "\n");
     printMsg("  landprovincemap.tif      : ", outLandMap.string(), "\n");
     printMsg("  seaprovincemap.tif       : ", outSeaMap.string(), "\n");
+    printMsg("  provinces.txt            : ", outAllTxt.string(), "\n");
+    printMsg("  landprovinces.txt        : ", outLandTxt.string(), "\n");
+    printMsg("  seaprovinces.txt         : ", outSeaTxt.string(), "\n");
 
     return 0;
 }
