@@ -1,4 +1,4 @@
-// GenerateHexProvinces.cpp – debug version
+// GenerateHexProvinces.cpp – final corrected version
 // Compile: g++ -std=c++20 -O3 GenerateHexProvinces.cpp -o exe/GenerateHexProvinces -lgdal
 // Run: ./exe/GenerateHexProvinces
 
@@ -367,8 +367,9 @@ int main() {
     uint32_t totalProvinces = newId - 1;
     printMsg("✅ Total provinces after merging and renumbering: ", totalProvinces, "\n");
 
-    // ---------- Pre‑compute centre pixel for each hex (with verification) ----------
-    std::vector<std::vector<bool>> isCentre(rows, std::vector<bool>(cols, false));
+    // ---------- Pre‑compute centre pixel coordinates for each hex ----------
+    std::vector<std::vector<int>> centreX(rows, std::vector<int>(cols, -1));
+    std::vector<std::vector<int>> centreY(rows, std::vector<int>(cols, -1));
     size_t centreCount = 0;
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
@@ -377,18 +378,14 @@ int main() {
             auto [cx, cy] = hexToPixel(ax.q, ax.r, xOff, yOff);
             int px = static_cast<int>(std::round(cx));
             int py = static_cast<int>(std::round(cy));
-            if (px < 0 || px >= width || py < 0 || py >= height) continue;
-            // Verify that this pixel maps back to the same hex
-            Hex back = pixelToHex(static_cast<double>(px), static_cast<double>(py), xOff, yOff);
-            int backCol = back.q + (back.r - (back.r & 1)) / 2;
-            int backRow = back.r;
-            if (backRow == r && backCol == c) {
-                isCentre[r][c] = true;
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+                centreX[r][c] = px;
+                centreY[r][c] = py;
                 centreCount++;
             }
         }
     }
-    printMsg("✅ Found ", centreCount, " centre pixels (should be close to number of hex cells).\n");
+    printMsg("✅ Computed centre pixel for ", centreCount, " hex cells.\n");
 
     // ---------- Write text files ----------
     printMsg("📝 Writing provinces.txt (combined)...\n");
@@ -442,7 +439,7 @@ int main() {
     stxt.close();
     printMsg("✅ seaprovinces.txt written (", seaCount, " entries).\n");
 
-    // ---------- Write province.bin and the three RGBA maps (with debug output) ----------
+    // ---------- Write province.bin and the three RGBA maps ----------
     printMsg("✍️  Writing province.bin (ID<<1 | centre_flag), worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif (centres in white, fully opaque)...\n");
     std::ofstream foutBin(outBin, std::ios::binary);
     if (!foutBin) { std::cerr << "❌ Cannot create " << outBin << "\n"; return 1; }
@@ -488,7 +485,8 @@ int main() {
             if (row < 0) row = 0;
             if (row >= rows) row = rows - 1;
             uint32_t id = cellId[row][col];
-            bool centre = isCentre[row][col];
+            // Check if this pixel is the centre of its hex
+            bool centre = (centreX[row][col] == x && centreY[row][col] == y);
             uint32_t packed = (id << 1) | (centre ? 1 : 0);
             rowBin32[x] = packed;
 
