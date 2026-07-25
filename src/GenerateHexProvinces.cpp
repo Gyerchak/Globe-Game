@@ -383,7 +383,7 @@ int main() {
         }
     }
 
-    // ---------- Write text files (ID;R G B A) with A=0 ----------
+    // ---------- Write text files ----------
     printMsg("📝 Writing provinces.txt (combined)...\n");
     std::ofstream allTxt(outAllTxt);
     if (!allTxt) { std::cerr << "❌ Cannot create " << outAllTxt << "\n"; return 1; }
@@ -436,11 +436,11 @@ int main() {
     printMsg("✅ seaprovinces.txt written (", seaCount, " entries).\n");
 
     // ---------- Write province.bin and the three RGBA maps ----------
-    printMsg("✍️  Writing province.bin (ID<<1 | centre_flag), worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif (RGBA with alpha encoding)...\n");
+    printMsg("✍️  Writing province.bin (ID<<1 | centre_flag), worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif (centres in white)...\n");
     std::ofstream foutBin(outBin, std::ios::binary);
     if (!foutBin) { std::cerr << "❌ Cannot create " << outBin << "\n"; return 1; }
 
-    // RGBA options
+    // RGBA options (all opaque)
     char** rgbaOpts = nullptr;
     rgbaOpts = CSLSetNameValue(rgbaOpts, "COMPRESS", "LZW");
     rgbaOpts = CSLSetNameValue(rgbaOpts, "PREDICTOR", "2");
@@ -469,6 +469,8 @@ int main() {
     std::vector<uint8_t> lR(width), lG(width), lB(width), lA(width);
     std::vector<uint8_t> sR(width), sG(width), sB(width), sA(width);
 
+    const uint8_t CENTRE_R = 255, CENTRE_G = 255, CENTRE_B = 255; // white
+
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             Hex h = pixelToHex(static_cast<double>(x), static_cast<double>(y), xOff, yOff);
@@ -486,27 +488,22 @@ int main() {
             auto c = colorFromID(id);
             bool isLand = cellIsLand[row][col] || cellIsCoastal[row][col];
 
-            // Alpha encoding:
-            // centre → 255 (fully transparent)
-            // land non‑centre → 0
-            // sea non‑centre → 128 (half transparent)
-            uint8_t alpha;
-            if (centre) {
-                alpha = 255;
-            } else {
-                alpha = isLand ? 0 : 128;
-            }
+            // For all maps: if centre pixel, use white; else use province colour.
+            uint8_t rCol = centre ? CENTRE_R : c[0];
+            uint8_t gCol = centre ? CENTRE_G : c[1];
+            uint8_t bCol = centre ? CENTRE_B : c[2];
+            uint8_t aVal = 255; // fully opaque
 
-            // World map: always show colour with appropriate alpha
-            wR[x] = c[0]; wG[x] = c[1]; wB[x] = c[2]; wA[x] = alpha;
+            // World map
+            wR[x] = rCol; wG[x] = gCol; wB[x] = bCol; wA[x] = aVal;
 
-            // Land map: only land gets colour, sea black
+            // Land map
             if (isLand) {
-                lR[x] = c[0]; lG[x] = c[1]; lB[x] = c[2]; lA[x] = alpha;
-                sR[x] = 0; sG[x] = 0; sB[x] = 0; sA[x] = 0;
+                lR[x] = rCol; lG[x] = gCol; lB[x] = bCol; lA[x] = aVal;
+                sR[x] = 0; sG[x] = 0; sB[x] = 0; sA[x] = 255;
             } else {
-                lR[x] = 0; lG[x] = 0; lB[x] = 0; lA[x] = 0;
-                sR[x] = c[0]; sG[x] = c[1]; sB[x] = c[2]; sA[x] = alpha;
+                lR[x] = 0; lG[x] = 0; lB[x] = 0; lA[x] = 255;
+                sR[x] = rCol; sG[x] = gCol; sB[x] = bCol; sA[x] = aVal;
             }
         }
 
@@ -539,9 +536,9 @@ int main() {
     printMsg("  hexheightmap.tif         : ", outHex.string(), "\n");
     printMsg("  hexheightmap_color.tif   : ", outHexCol.string(), "\n");
     printMsg("  province.bin             : ", outBin.string(), " (~", (width*height*4/1024/1024), " MB)\n");
-    printMsg("  worldprovincemap.tif     : ", outWorldMap.string(), " (RGBA)\n");
-    printMsg("  landprovincemap.tif      : ", outLandMap.string(), " (RGBA)\n");
-    printMsg("  seaprovincemap.tif       : ", outSeaMap.string(), " (RGBA)\n");
+    printMsg("  worldprovincemap.tif     : ", outWorldMap.string(), " (centres in white)\n");
+    printMsg("  landprovincemap.tif      : ", outLandMap.string(), " (centres in white)\n");
+    printMsg("  seaprovincemap.tif       : ", outSeaMap.string(), " (centres in white)\n");
     printMsg("  provinces.txt            : ", outAllTxt.string(), " (ID;R G B A)\n");
     printMsg("  landprovinces.txt        : ", outLandTxt.string(), " (ID;R G B A)\n");
     printMsg("  seaprovinces.txt         : ", outSeaTxt.string(), " (ID;R G B A)\n");
