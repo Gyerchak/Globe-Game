@@ -383,21 +383,18 @@ int main() {
         }
     }
 
-    // ---------- Write text files (ID;R G B A) ----------
-    // Combined provinces.txt
+    // ---------- Write text files (ID;R G B A) with A=0 ----------
     printMsg("📝 Writing provinces.txt (combined)...\n");
     std::ofstream allTxt(outAllTxt);
     if (!allTxt) { std::cerr << "❌ Cannot create " << outAllTxt << "\n"; return 1; }
     for (uint32_t i = 1; i <= totalProvinces; ++i) {
         auto c = colorFromID(i);
-        // Alpha = 255 (fully opaque)
-        allTxt << i << ";" << (int)c[0] << " " << (int)c[1] << " " << (int)c[2] << " 255\n";
+        allTxt << i << ";" << (int)c[0] << " " << (int)c[1] << " " << (int)c[2] << " 0\n";
         if (i % 100000 == 0) printMsg("  wrote ", i, " entries\n");
     }
     allTxt.close();
     printMsg("✅ provinces.txt written.\n");
 
-    // Land provinces (ID;R G B A)
     printMsg("📝 Writing landprovinces.txt...\n");
     std::ofstream ltxt(outLandTxt);
     if (!ltxt) { std::cerr << "❌ Cannot create " << outLandTxt << "\n"; return 1; }
@@ -409,7 +406,7 @@ int main() {
                 if (id > 0) {
                     landCount++;
                     auto col = colorFromID(id);
-                    ltxt << id << ";" << (int)col[0] << " " << (int)col[1] << " " << (int)col[2] << " 255\n";
+                    ltxt << id << ";" << (int)col[0] << " " << (int)col[1] << " " << (int)col[2] << " 0\n";
                     if (landCount % 100000 == 0) printMsg("  wrote ", landCount, " land entries\n");
                 }
             }
@@ -418,7 +415,6 @@ int main() {
     ltxt.close();
     printMsg("✅ landprovinces.txt written (", landCount, " entries).\n");
 
-    // Sea provinces (ID;R G B A)
     printMsg("📝 Writing seaprovinces.txt...\n");
     std::ofstream stxt(outSeaTxt);
     if (!stxt) { std::cerr << "❌ Cannot create " << outSeaTxt << "\n"; return 1; }
@@ -430,7 +426,7 @@ int main() {
                 if (id > 0) {
                     seaCount++;
                     auto col = colorFromID(id);
-                    stxt << id << ";" << (int)col[0] << " " << (int)col[1] << " " << (int)col[2] << " 255\n";
+                    stxt << id << ";" << (int)col[0] << " " << (int)col[1] << " " << (int)col[2] << " 0\n";
                     if (seaCount % 100000 == 0) printMsg("  wrote ", seaCount, " sea entries\n");
                 }
             }
@@ -439,19 +435,19 @@ int main() {
     stxt.close();
     printMsg("✅ seaprovinces.txt written (", seaCount, " entries).\n");
 
-    // ---------- Write province.bin (32-bit with centre flag) and the three coloured maps (RGBA) ----------
-    printMsg("✍️  Writing province.bin (ID<<1 | centre_flag), worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif (RGBA)...\n");
+    // ---------- Write province.bin and the three RGBA maps ----------
+    printMsg("✍️  Writing province.bin (ID<<1 | centre_flag), worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif (RGBA with alpha encoding)...\n");
     std::ofstream foutBin(outBin, std::ios::binary);
     if (!foutBin) { std::cerr << "❌ Cannot create " << outBin << "\n"; return 1; }
 
-    // Create 4‑band (RGBA) TIFFs
+    // RGBA options
     char** rgbaOpts = nullptr;
     rgbaOpts = CSLSetNameValue(rgbaOpts, "COMPRESS", "LZW");
     rgbaOpts = CSLSetNameValue(rgbaOpts, "PREDICTOR", "2");
     rgbaOpts = CSLSetNameValue(rgbaOpts, "TILED", "YES");
     rgbaOpts = CSLSetNameValue(rgbaOpts, "BLOCKXSIZE", "512");
     rgbaOpts = CSLSetNameValue(rgbaOpts, "BLOCKYSIZE", "512");
-    rgbaOpts = CSLSetNameValue(rgbaOpts, "PHOTOMETRIC", "RGB");   // for RGBA
+    rgbaOpts = CSLSetNameValue(rgbaOpts, "PHOTOMETRIC", "RGB");
 
     GDALDataset* worldMapDS = drv->Create(outWorldMap.c_str(), width, height, 4, GDT_Byte, rgbaOpts);
     if (!worldMapDS) { std::cerr << "❌ Cannot create " << outWorldMap << "\n"; return 1; }
@@ -484,16 +480,27 @@ int main() {
             if (row >= rows) row = rows - 1;
             uint32_t id = cellId[row][col];
             bool centre = isCentre[row][col];
-            // Pack: ID in bits 1..31, centre flag in LSB
             uint32_t packed = (id << 1) | (centre ? 1 : 0);
             rowBin32[x] = packed;
 
-            // Colours for the maps – alpha = 0 for centre, 255 for normal
             auto c = colorFromID(id);
-            uint8_t alpha = centre ? 0 : 255;
-            // World map
-            wR[x] = c[0]; wG[x] = c[1]; wB[x] = c[2]; wA[x] = alpha;
             bool isLand = cellIsLand[row][col] || cellIsCoastal[row][col];
+
+            // Alpha encoding:
+            // centre → 255 (fully transparent)
+            // land non‑centre → 0
+            // sea non‑centre → 128 (half transparent)
+            uint8_t alpha;
+            if (centre) {
+                alpha = 255;
+            } else {
+                alpha = isLand ? 0 : 128;
+            }
+
+            // World map: always show colour with appropriate alpha
+            wR[x] = c[0]; wG[x] = c[1]; wB[x] = c[2]; wA[x] = alpha;
+
+            // Land map: only land gets colour, sea black
             if (isLand) {
                 lR[x] = c[0]; lG[x] = c[1]; lB[x] = c[2]; lA[x] = alpha;
                 sR[x] = 0; sG[x] = 0; sB[x] = 0; sA[x] = 0;
