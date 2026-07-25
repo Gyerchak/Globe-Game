@@ -1,4 +1,4 @@
-// GenerateHexProvinces.cpp
+// GenerateHexProvinces.cpp – debug version
 // Compile: g++ -std=c++20 -O3 GenerateHexProvinces.cpp -o exe/GenerateHexProvinces -lgdal
 // Run: ./exe/GenerateHexProvinces
 
@@ -26,7 +26,6 @@ constexpr double DX = std::sqrt(3.0) * HEX_RADIUS;
 constexpr double DY = 1.5 * HEX_RADIUS;
 constexpr uint8_t COASTAL_HEIGHT = 10;
 
-// Helper: print with flush
 template<typename... Args>
 void printMsg(Args&&... args) {
     (std::cout << ... << std::forward<Args>(args)) << std::flush;
@@ -443,7 +442,7 @@ int main() {
     stxt.close();
     printMsg("✅ seaprovinces.txt written (", seaCount, " entries).\n");
 
-    // ---------- Write province.bin and the three RGBA maps ----------
+    // ---------- Write province.bin and the three RGBA maps (with debug output) ----------
     printMsg("✍️  Writing province.bin (ID<<1 | centre_flag), worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif (centres in white, fully opaque)...\n");
     std::ofstream foutBin(outBin, std::ios::binary);
     if (!foutBin) { std::cerr << "❌ Cannot create " << outBin << "\n"; return 1; }
@@ -477,7 +476,7 @@ int main() {
     std::vector<uint8_t> lR(width), lG(width), lB(width), lA(width);
     std::vector<uint8_t> sR(width), sG(width), sB(width), sA(width);
 
-    const uint8_t CENTRE_R = 255, CENTRE_G = 255, CENTRE_B = 255; // white
+    const uint8_t CENTRE_R = 255, CENTRE_G = 255, CENTRE_B = 255;
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -500,18 +499,26 @@ int main() {
             uint8_t rCol = centre ? CENTRE_R : c[0];
             uint8_t gCol = centre ? CENTRE_G : c[1];
             uint8_t bCol = centre ? CENTRE_B : c[2];
-            uint8_t aVal = 255; // fully opaque
+            uint8_t aVal = 255;
 
-            // World map
             wR[x] = rCol; wG[x] = gCol; wB[x] = bCol; wA[x] = aVal;
-
-            // Land map
             if (isLand) {
                 lR[x] = rCol; lG[x] = gCol; lB[x] = bCol; lA[x] = aVal;
                 sR[x] = 0; sG[x] = 0; sB[x] = 0; sA[x] = 255;
             } else {
                 lR[x] = 0; lG[x] = 0; lB[x] = 0; lA[x] = 255;
                 sR[x] = rCol; sG[x] = gCol; sB[x] = bCol; sA[x] = aVal;
+            }
+        }
+
+        // Debug: print first 10 pixels of row 0 for world map
+        if (y == 0) {
+            printMsg("🔍 Debug row 0, first 10 pixels:\n");
+            for (int x = 0; x < 10 && x < width; ++x) {
+                uint32_t id = rowBin32[x] >> 1;
+                bool centre = rowBin32[x] & 1;
+                printMsg("  x=", x, " id=", id, " centre=", centre ? 1 : 0,
+                         " R=", (int)wR[x], " G=", (int)wG[x], " B=", (int)wB[x], "\n");
             }
         }
 
