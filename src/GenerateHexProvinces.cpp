@@ -368,8 +368,9 @@ int main() {
     uint32_t totalProvinces = newId - 1;
     printMsg("✅ Total provinces after merging and renumbering: ", totalProvinces, "\n");
 
-    // ---------- Pre‑compute centre pixel for each hex ----------
+    // ---------- Pre‑compute centre pixel for each hex (with verification) ----------
     std::vector<std::vector<bool>> isCentre(rows, std::vector<bool>(cols, false));
+    size_t centreCount = 0;
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
             if (cellId[r][c] == 0) continue;
@@ -377,11 +378,18 @@ int main() {
             auto [cx, cy] = hexToPixel(ax.q, ax.r, xOff, yOff);
             int px = static_cast<int>(std::round(cx));
             int py = static_cast<int>(std::round(cy));
-            if (px >= 0 && px < width && py >= 0 && py < height) {
+            if (px < 0 || px >= width || py < 0 || py >= height) continue;
+            // Verify that this pixel maps back to the same hex
+            Hex back = pixelToHex(static_cast<double>(px), static_cast<double>(py), xOff, yOff);
+            int backCol = back.q + (back.r - (back.r & 1)) / 2;
+            int backRow = back.r;
+            if (backRow == r && backCol == c) {
                 isCentre[r][c] = true;
+                centreCount++;
             }
         }
     }
+    printMsg("✅ Found ", centreCount, " centre pixels (should be close to number of hex cells).\n");
 
     // ---------- Write text files ----------
     printMsg("📝 Writing provinces.txt (combined)...\n");
@@ -436,7 +444,7 @@ int main() {
     printMsg("✅ seaprovinces.txt written (", seaCount, " entries).\n");
 
     // ---------- Write province.bin and the three RGBA maps ----------
-    printMsg("✍️  Writing province.bin (ID<<1 | centre_flag), worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif (centres in white)...\n");
+    printMsg("✍️  Writing province.bin (ID<<1 | centre_flag), worldprovincemap.tif, landprovincemap.tif, seaprovincemap.tif (centres in white, fully opaque)...\n");
     std::ofstream foutBin(outBin, std::ios::binary);
     if (!foutBin) { std::cerr << "❌ Cannot create " << outBin << "\n"; return 1; }
 
