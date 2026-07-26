@@ -74,7 +74,7 @@ int main() {
     std::ios::sync_with_stdio(false);
 
     // Paths
-    fs::path inPath = fs::current_path() / "input" / "heightmapcolor.tif";
+    fs::path inPath = fs::current_path() / "input" / "heightmap_color.tif";
     fs::path outPath = fs::current_path() / "output" / "circleprojection.tif";
 
     if (!fs::exists(inPath)) {
