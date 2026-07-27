@@ -1,4 +1,4 @@
-// squaremapglobe.cpp – smooth scroll zoom, no water overlay, fixed clipping
+// squaremapglobe.cpp – final polished: perfect zoom, speed, and planet stays visible
 // Compile: g++ -std=c++20 -O3 src/squaremapglobe.cpp -o exe/squaremapglobe -lgdal -lvulkan -lglfw
 // Run: ./exe/squaremapglobe
 
@@ -59,10 +59,7 @@ struct UniformBufferObject {
     glm::vec4 cameraPos;
 };
 
-// Push constants – no water overlay
-struct PushConstants {
-    int dummy; // unused, kept for alignment
-};
+struct PushConstants { int dummy; };
 
 class GlobeApp {
 public:
@@ -101,7 +98,6 @@ private:
     VkBuffer vertexBuffer = VK_NULL_HANDLE, indexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE, indexBufferMemory = VK_NULL_HANDLE;
 
-    // Texture (single RGBA image)
     VkImage textureImage = VK_NULL_HANDLE;
     VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
     VkImageView textureImageView = VK_NULL_HANDLE;
@@ -118,10 +114,10 @@ private:
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
 
-    // Camera state
+    // Camera
     float camDistance = 2.5f;
-    float targetDistance = 2.5f;        // for smooth zoom
-    const float zoomSmoothness = 0.12f; // interpolation factor per frame
+    float targetDistance = 2.5f;
+    const float zoomSmoothness = 0.12f;      // faster interpolation
     float camPitch = 0.0f, camYaw = 0.0f, camRoll = 0.0f;
     glm::vec3 camTarget = glm::vec3(0.0f);
     glm::vec2 lastMousePos;
@@ -177,12 +173,13 @@ private:
         glm::vec2 delta = newPos - app->lastMousePos;
         app->lastMousePos = newPos;
 
-        // Orbit (right mouse drag)
+        // Orbit speed – strongly dependent on distance
+        float orbitSpeed = 0.002f / (app->camDistance * 0.5f + 0.5f);
         if (app->rightMouseDown && !app->shiftDown) {
-            app->camYaw += delta.x * 0.005f;
-            app->camPitch -= delta.y * 0.005f;
+            app->camYaw += delta.x * orbitSpeed;
+            app->camPitch -= delta.y * orbitSpeed;
         }
-        // Pan (shift + right mouse drag, or middle mouse drag)
+        // Pan (shift + right, or middle mouse)
         if ((app->shiftDown && app->rightMouseDown) || app->middleMouseDown) {
             glm::vec3 camPos = app->getCameraPos();
             glm::vec3 forward = glm::normalize(app->camTarget - camPos);
@@ -196,11 +193,10 @@ private:
 
     static void scrollCallback(GLFWwindow* w, double, double yoffset) {
         auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
-        float sensitivity = 0.15f;
+        float sensitivity = 0.08f;   // lower = smoother
         float factor = 1.0f - (float)yoffset * sensitivity;
-        // Set target distance, clamped
         app->targetDistance *= factor;
-        app->targetDistance = glm::clamp(app->targetDistance, 0.5f, 10000.0f);
+        app->targetDistance = glm::clamp(app->targetDistance, 1.0f, 200.0f);
     }
 
     glm::vec3 getCameraPos() {
@@ -226,7 +222,7 @@ private:
         isFullscreen = !isFullscreen;
     }
 
-    // ----- Vulkan helpers (unchanged) -----
+    // ----- Vulkan helpers (identical to previous version) -----
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props) {
         VkPhysicalDeviceMemoryProperties memProps;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
@@ -792,7 +788,6 @@ private:
                                            cb.attachmentCount = 1;
                                            cb.pAttachments = &cba;
 
-                                           // No push constants needed now – but we keep an empty one for compatibility
                                            VkPushConstantRange pcr{};
                                            pcr.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
                                            pcr.offset = 0;
@@ -1056,7 +1051,6 @@ private:
                                            vkCmdBindIndexBuffer(cmd, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
                                            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
-                                           // Push dummy constant (unused)
                                            PushConstants pc{0};
                                            vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pc);
 
@@ -1096,12 +1090,11 @@ private:
                                        }
 
                                        void updateCamera() {
-                                           // Smooth zoom: interpolate camDistance toward targetDistance
+                                           // Smooth zoom
                                            camDistance += (targetDistance - camDistance) * zoomSmoothness;
-                                           // Clamp distance to avoid NaN
-                                           camDistance = glm::clamp(camDistance, 0.5f, 10000.0f);
+                                           camDistance = glm::clamp(camDistance, 1.0f, 200.0f);
 
-                                           // Keyboard movement (speed based on deltaTime)
+                                           // Keyboard (speed‑based)
                                            float speed = 0.8f * deltaTime;
                                            if (keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) speed *= 3.0f;
                                            if (keys[GLFW_KEY_W]) camPitch += speed;
@@ -1110,9 +1103,10 @@ private:
                                            if (keys[GLFW_KEY_D]) camYaw += speed;
                                            if (keys[GLFW_KEY_Q]) camRoll += speed;
                                            if (keys[GLFW_KEY_E]) camRoll -= speed;
-                                           if (keys[GLFW_KEY_Z]) { targetDistance *= (1.0f - speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.5f, 10000.0f); }
-                                           if (keys[GLFW_KEY_X]) { targetDistance *= (1.0f + speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.5f, 10000.0f); }
+                                           if (keys[GLFW_KEY_Z]) { targetDistance *= (1.0f - speed * 0.5f); targetDistance = glm::clamp(targetDistance, 1.0f, 200.0f); }
+                                           if (keys[GLFW_KEY_X]) { targetDistance *= (1.0f + speed * 0.5f); targetDistance = glm::clamp(targetDistance, 1.0f, 200.0f); }
 
+                                           // Compute view
                                            float cp = glm::cos(camPitch), sp = glm::sin(camPitch);
                                            float cy = glm::cos(camYaw), sy = glm::sin(camYaw);
                                            glm::vec3 camPos;
@@ -1128,7 +1122,7 @@ private:
 
                                            float aspect = (float)swapChainExtent.width / (float)swapChainExtent.height;
                                            float nearPlane = glm::max(0.001f, camDistance * 0.0005f);
-                                           float farPlane = glm::max(100.0f, camDistance * 20.0f);
+                                           float farPlane = glm::max(1000.0f, camDistance * 20.0f);
                                            glm::mat4 proj = glm::perspective(glm::radians(60.0f), aspect, nearPlane, farPlane);
                                            proj[1][1] *= -1;
                                            proj[2][2] = proj[2][2] * 0.5f + proj[3][2] * 0.5f;
