@@ -1,4 +1,4 @@
-// squaremapglobe.cpp – final polished: perfect zoom, speed, and planet stays visible
+// squaremapglobe.cpp – final orbital zoom
 // Compile: g++ -std=c++20 -O3 src/squaremapglobe.cpp -o exe/squaremapglobe -lgdal -lvulkan -lglfw
 // Run: ./exe/squaremapglobe
 
@@ -114,10 +114,10 @@ private:
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
 
-    // Camera
+    // Camera – orbital zoom
     float camDistance = 2.5f;
     float targetDistance = 2.5f;
-    const float zoomSmoothness = 0.12f;      // faster interpolation
+    const float zoomSmoothness = 0.18f;
     float camPitch = 0.0f, camYaw = 0.0f, camRoll = 0.0f;
     glm::vec3 camTarget = glm::vec3(0.0f);
     glm::vec2 lastMousePos;
@@ -173,8 +173,8 @@ private:
         glm::vec2 delta = newPos - app->lastMousePos;
         app->lastMousePos = newPos;
 
-        // Orbit speed – strongly dependent on distance
-        float orbitSpeed = 0.002f / (app->camDistance * 0.5f + 0.5f);
+        // Orbit speed – distance‑dependent
+        float orbitSpeed = 0.001f / (app->camDistance * 0.4f + 0.6f);
         if (app->rightMouseDown && !app->shiftDown) {
             app->camYaw += delta.x * orbitSpeed;
             app->camPitch -= delta.y * orbitSpeed;
@@ -193,10 +193,10 @@ private:
 
     static void scrollCallback(GLFWwindow* w, double, double yoffset) {
         auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
-        float sensitivity = 0.08f;   // lower = smoother
+        float sensitivity = 0.04f;   // smooth mouse zoom
         float factor = 1.0f - (float)yoffset * sensitivity;
         app->targetDistance *= factor;
-        app->targetDistance = glm::clamp(app->targetDistance, 1.0f, 200.0f);
+        app->targetDistance = glm::clamp(app->targetDistance, 0.8f, 500.0f);
     }
 
     glm::vec3 getCameraPos() {
@@ -222,7 +222,7 @@ private:
         isFullscreen = !isFullscreen;
     }
 
-    // ----- Vulkan helpers (identical to previous version) -----
+    // ----- Vulkan helpers (unchanged) -----
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props) {
         VkPhysicalDeviceMemoryProperties memProps;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
@@ -1092,19 +1092,19 @@ private:
                                        void updateCamera() {
                                            // Smooth zoom
                                            camDistance += (targetDistance - camDistance) * zoomSmoothness;
-                                           camDistance = glm::clamp(camDistance, 1.0f, 200.0f);
+                                           camDistance = glm::clamp(camDistance, 0.8f, 500.0f);
 
-                                           // Keyboard (speed‑based)
-                                           float speed = 0.8f * deltaTime;
-                                           if (keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) speed *= 3.0f;
+                                           // Keyboard movement
+                                           float speed = 0.4f * deltaTime;
+                                           if (keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) speed *= 5.0f;
                                            if (keys[GLFW_KEY_W]) camPitch += speed;
                                            if (keys[GLFW_KEY_S]) camPitch -= speed;
                                            if (keys[GLFW_KEY_A]) camYaw -= speed;
                                            if (keys[GLFW_KEY_D]) camYaw += speed;
                                            if (keys[GLFW_KEY_Q]) camRoll += speed;
                                            if (keys[GLFW_KEY_E]) camRoll -= speed;
-                                           if (keys[GLFW_KEY_Z]) { targetDistance *= (1.0f - speed * 0.5f); targetDistance = glm::clamp(targetDistance, 1.0f, 200.0f); }
-                                           if (keys[GLFW_KEY_X]) { targetDistance *= (1.0f + speed * 0.5f); targetDistance = glm::clamp(targetDistance, 1.0f, 200.0f); }
+                                           if (keys[GLFW_KEY_Z]) { targetDistance *= (1.0f - speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.8f, 500.0f); }
+                                           if (keys[GLFW_KEY_X]) { targetDistance *= (1.0f + speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.8f, 500.0f); }
 
                                            // Compute view
                                            float cp = glm::cos(camPitch), sp = glm::sin(camPitch);
@@ -1121,8 +1121,8 @@ private:
                                            view = glm::rotate(view, camRoll, forward);
 
                                            float aspect = (float)swapChainExtent.width / (float)swapChainExtent.height;
-                                           float nearPlane = glm::max(0.001f, camDistance * 0.0005f);
-                                           float farPlane = glm::max(1000.0f, camDistance * 20.0f);
+                                           float nearPlane = glm::max(0.001f, camDistance * 0.001f);
+                                           float farPlane = glm::max(5000.0f, camDistance * 20.0f);
                                            glm::mat4 proj = glm::perspective(glm::radians(60.0f), aspect, nearPlane, farPlane);
                                            proj[1][1] *= -1;
                                            proj[2][2] = proj[2][2] * 0.5f + proj[3][2] * 0.5f;
