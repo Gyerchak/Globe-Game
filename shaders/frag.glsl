@@ -10,5 +10,7 @@ layout(push_constant) uniform PushConstants {
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = texture(texSampler, fragTexCoord);
+    // Horizontal flip – correct for this texture
+    vec2 uv = vec2(1.0 - fragTexCoord.x, fragTexCoord.y);
+    outColor = texture(texSampler, uv);
 }

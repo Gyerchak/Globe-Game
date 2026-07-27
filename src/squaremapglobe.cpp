@@ -1,4 +1,4 @@
-// squaremapglobe.cpp – fixed version (simple shader, RGBA texture)
+// squaremapglobe.cpp – fullscreen, smooth zoom, panning, correct flip
 // Compile: g++ -std=c++20 -O3 src/squaremapglobe.cpp -o exe/squaremapglobe -lgdal -lvulkan -lglfw
 // Run: ./exe/squaremapglobe
 
@@ -115,49 +115,114 @@ private:
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
 
-    float camDistance = 2.5f, camPitch = 0.0f, camYaw = 0.0f, camRoll = 0.0f;
+    // Camera state
+    float camDistance = 2.5f;
+    float camPitch = 0.0f, camYaw = 0.0f, camRoll = 0.0f;
     glm::vec3 camTarget = glm::vec3(0.0f);
     bool waterOverlay = false;
     glm::vec2 lastMousePos;
     bool rightMouseDown = false;
+    bool middleMouseDown = false;
+    bool shiftDown = false;
     bool keys[512] = {};
     float deltaTime = 0.0f;
+
+    bool isFullscreen = false;
+    GLFWmonitor* monitor = nullptr;
+    int windowedX = 0, windowedY = 0, windowedW = WIDTH, windowedH = HEIGHT;
 
     VkImage depthImage = VK_NULL_HANDLE;
     VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
     VkImageView depthImageView = VK_NULL_HANDLE;
 
-    static void keyCallback(GLFWwindow* w, int key, int, int action, int) {
+    // Callbacks
+    static void keyCallback(GLFWwindow* w, int key, int, int action, int mods) {
         auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
         if (action == GLFW_PRESS) {
-            if (key == GLFW_KEY_V) app->waterOverlay = !app->waterOverlay;
-            if (key == GLFW_KEY_R) { app->camPitch = app->camYaw = app->camRoll = 0.0f; app->camDistance = 2.5f; }
-            if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(w, GLFW_TRUE);
+            switch (key) {
+                case GLFW_KEY_V: app->waterOverlay = !app->waterOverlay; break;
+                case GLFW_KEY_R: app->camPitch = app->camYaw = app->camRoll = 0.0f; app->camDistance = 2.5f; app->camTarget = glm::vec3(0.0f); break;
+                case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(w, GLFW_TRUE); break;
+                case GLFW_KEY_F: app->toggleFullscreen(); break;
+                default: break;
+            }
+            if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT)
+                app->shiftDown = true;
         }
-        if (key >= 0 && key < 512) app->keys[key] = (action == GLFW_PRESS || action == GLFW_REPEAT);
+        if (action == GLFW_RELEASE) {
+            if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT)
+                app->shiftDown = false;
+        }
+        if (key >= 0 && key < 512)
+            app->keys[key] = (action == GLFW_PRESS || action == GLFW_REPEAT);
     }
+
     static void mouseButtonCallback(GLFWwindow* w, int button, int action, int) {
         auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
-        if (button == GLFW_MOUSE_BUTTON_RIGHT) app->rightMouseDown = (action == GLFW_PRESS);
-        double x, y; glfwGetCursorPos(w, &x, &y);
+        if (button == GLFW_MOUSE_BUTTON_RIGHT)
+            app->rightMouseDown = (action == GLFW_PRESS);
+        if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+            app->middleMouseDown = (action == GLFW_PRESS);
+        double x, y;
+        glfwGetCursorPos(w, &x, &y);
         app->lastMousePos = glm::vec2(x, y);
     }
+
     static void cursorPosCallback(GLFWwindow* w, double xpos, double ypos) {
         auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
         glm::vec2 newPos(xpos, ypos);
         glm::vec2 delta = newPos - app->lastMousePos;
         app->lastMousePos = newPos;
-        if (app->rightMouseDown) {
+
+        // Orbit (right mouse drag)
+        if (app->rightMouseDown && !app->shiftDown) {
             app->camYaw += delta.x * 0.005f;
             app->camPitch -= delta.y * 0.005f;
         }
-    }
-    static void scrollCallback(GLFWwindow* w, double, double yoffset) {
-        auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
-        app->camDistance *= (1.0f - (float)yoffset * 0.15f);
-        app->camDistance = glm::clamp(app->camDistance, 1.08f, 5000.0f);
+        // Pan (shift + left mouse drag, or middle mouse drag)
+        if ((app->shiftDown && app->rightMouseDown) || app->middleMouseDown) {
+            glm::vec3 camPos = app->getCameraPos();
+            glm::vec3 forward = glm::normalize(app->camTarget - camPos);
+            glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+            glm::vec3 up = glm::normalize(glm::cross(right, forward));
+            float scale = app->camDistance * 0.0005f;
+            app->camTarget += right * (-delta.x * scale);
+            app->camTarget += up * (delta.y * scale);
+        }
     }
 
+    static void scrollCallback(GLFWwindow* w, double, double yoffset) {
+        auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
+        float sensitivity = 0.15f;
+        float factor = 1.0f - (float)yoffset * sensitivity;
+        app->camDistance *= factor;
+        app->camDistance = glm::clamp(app->camDistance, 0.5f, 10000.0f);
+    }
+
+    glm::vec3 getCameraPos() {
+        float cp = glm::cos(camPitch), sp = glm::sin(camPitch);
+        float cy = glm::cos(camYaw), sy = glm::sin(camYaw);
+        glm::vec3 pos;
+        pos.x = camDistance * cp * sy;
+        pos.y = camDistance * sp;
+        pos.z = camDistance * cp * cy;
+        return pos + camTarget;
+    }
+
+    void toggleFullscreen() {
+        if (isFullscreen) {
+            glfwSetWindowMonitor(window, nullptr, windowedX, windowedY, windowedW, windowedH, 0);
+        } else {
+            glfwGetWindowPos(window, &windowedX, &windowedY);
+            glfwGetWindowSize(window, &windowedW, &windowedH);
+            monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+            glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        }
+        isFullscreen = !isFullscreen;
+    }
+
+    // ----- Vulkan helpers -----
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props) {
         VkPhysicalDeviceMemoryProperties memProps;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
@@ -389,7 +454,7 @@ private:
                                        void initWindow() {
                                            glfwInit();
                                            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-                                           glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+                                           glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
                                            window = glfwCreateWindow(WIDTH, HEIGHT, "Globe Viewer", nullptr, nullptr);
                                            glfwSetWindowUserPointer(window, this);
                                            glfwSetKeyCallback(window, keyCallback);
@@ -842,31 +907,34 @@ private:
                                            int h = ds->GetRasterYSize();
                                            std::cout << "📂 Texture: " << w << " x " << h << "\n";
 
-                                           // Read as RGBA
-                                           const int channels = 4;
-                                           size_t pixelBytes = w * h * channels;
-                                           std::vector<uint8_t> pixels(pixelBytes);
-                                           std::vector<uint8_t> rgb(w * h * 3);
-                                           CPLErr err = ds->GetRasterBand(1)->RasterIO(GF_Read, 0, 0, w, h,
-                                                                                       rgb.data(), w, h, GDT_Byte, 3, 0);
+                                           const int nBands = 3;
+                                           std::vector<uint8_t> rgb(w * h * nBands);
+                                           int bandMap[3] = {1, 2, 3};
+                                           CPLErr err = ds->RasterIO(GF_Read, 0, 0, w, h,
+                                                                     rgb.data(), w, h, GDT_Byte,
+                                                                     nBands, bandMap,
+                                                                     nBands, w * nBands, 1, nullptr);
                                            GDALClose(ds);
-                                           if (err != CE_None) throw std::runtime_error("Failed to read texture pixels.");
-
-                                           // Expand RGB to RGBA
-                                           for (int i = 0; i < w * h; ++i) {
-                                               pixels[i*4 + 0] = rgb[i*3 + 0];
-                                               pixels[i*4 + 1] = rgb[i*3 + 1];
-                                               pixels[i*4 + 2] = rgb[i*3 + 2];
-                                               pixels[i*4 + 3] = 255;
+                                           if (err != CE_None) {
+                                               throw std::runtime_error("Failed to read texture pixels (RasterIO error)");
                                            }
 
-                                           VkDeviceSize size = pixelBytes;
+                                           const int outChannels = 4;
+                                           std::vector<uint8_t> rgba(w * h * outChannels);
+                                           for (int i = 0; i < w * h; ++i) {
+                                               rgba[i*4 + 0] = rgb[i*3 + 0];
+                                               rgba[i*4 + 1] = rgb[i*3 + 1];
+                                               rgba[i*4 + 2] = rgb[i*3 + 2];
+                                               rgba[i*4 + 3] = 255;
+                                           }
+
+                                           VkDeviceSize size = rgba.size();
                                            VkBuffer staging; VkDeviceMemory stagingMem;
                                            createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                                         staging, stagingMem);
                                            void* data; vkMapMemory(device, stagingMem, 0, size, 0, &data);
-                                           memcpy(data, pixels.data(), size);
+                                           memcpy(data, rgba.data(), size);
                                            vkUnmapMemory(device, stagingMem);
 
                                            createImage((uint32_t)w, (uint32_t)h, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -1032,7 +1100,7 @@ private:
                                            if (keys[GLFW_KEY_E]) camRoll -= speed;
                                            if (keys[GLFW_KEY_Z]) camDistance *= (1.0f - speed * 0.5f);
                                            if (keys[GLFW_KEY_X]) camDistance *= (1.0f + speed * 0.5f);
-                                           camDistance = glm::clamp(camDistance, 1.08f, 5000.0f);
+                                           camDistance = glm::clamp(camDistance, 0.5f, 10000.0f);
 
                                            float cp = glm::cos(camPitch), sp = glm::sin(camPitch);
                                            float cy = glm::cos(camYaw), sy = glm::sin(camYaw);
@@ -1040,6 +1108,7 @@ private:
                                            camPos.x = camDistance * cp * sy;
                                            camPos.y = camDistance * sp;
                                            camPos.z = camDistance * cp * cy;
+                                           camPos += camTarget;
 
                                            glm::vec3 up(-sp * sy, cp, -sp * cy);
                                            glm::mat4 view = glm::lookAt(camPos, camTarget, up);
@@ -1048,7 +1117,7 @@ private:
 
                                            float aspect = (float)swapChainExtent.width / (float)swapChainExtent.height;
                                            float nearPlane = glm::max(0.001f, camDistance * 0.0005f);
-                                           float farPlane = glm::max(100.0f, camDistance * 5.0f);
+                                           float farPlane = glm::max(100.0f, camDistance * 10.0f);
                                            glm::mat4 proj = glm::perspective(glm::radians(60.0f), aspect, nearPlane, farPlane);
                                            proj[1][1] *= -1;
                                            proj[2][2] = proj[2][2] * 0.5f + proj[3][2] * 0.5f;
