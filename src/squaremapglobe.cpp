@@ -1,6 +1,5 @@
-// squaremapglobe.cpp
-// Linux Vulkan globe viewer using a single square texture.
-// Compile: g++ -std=c++20 -O3 squaremapglobe.cpp -o exe/squaremapglobe -lgdal -lvulkan -lglfw
+// squaremapglobe.cpp – fixed version (simple shader, RGBA texture)
+// Compile: g++ -std=c++20 -O3 src/squaremapglobe.cpp -o exe/squaremapglobe -lgdal -lvulkan -lglfw
 // Run: ./exe/squaremapglobe
 
 #include <vulkan/vulkan.h>
@@ -11,7 +10,6 @@
 
 #include <gdal_priv.h>
 #include <gdal_utils.h>
-#include <cpl_conv.h>
 
 #include <iostream>
 #include <vector>
@@ -24,6 +22,7 @@
 #include <set>
 #include <chrono>
 #include <algorithm>
+#include <cmath>
 
 constexpr int WIDTH = 1280;
 constexpr int HEIGHT = 720;
@@ -60,9 +59,7 @@ struct UniformBufferObject {
     glm::vec4 cameraPos;
 };
 
-struct PushConstants {
-    int waterOverlay; // 0 or 1
-};
+struct PushConstants { int waterOverlay; };
 
 class GlobeApp {
 public:
@@ -78,8 +75,7 @@ private:
     VkInstance instance = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
-    VkQueue graphicsQueue = VK_NULL_HANDLE;
-    VkQueue presentQueue = VK_NULL_HANDLE;
+    VkQueue graphicsQueue = VK_NULL_HANDLE, presentQueue = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
 
     VkSwapchainKHR swapChain = VK_NULL_HANDLE;
@@ -97,19 +93,17 @@ private:
     VkCommandPool commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> commandBuffers;
 
-    // Sphere mesh
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     VkBuffer vertexBuffer = VK_NULL_HANDLE, indexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE, indexBufferMemory = VK_NULL_HANDLE;
 
-    // Texture (square map)
+    // Texture (single RGBA image)
     VkImage textureImage = VK_NULL_HANDLE;
     VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
     VkImageView textureImageView = VK_NULL_HANDLE;
     VkSampler textureSampler = VK_NULL_HANDLE;
 
-    // Uniform buffers
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
     std::vector<void*> uniformBuffersMapped;
@@ -117,15 +111,11 @@ private:
     VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptorSets;
 
-    // Sync objects
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkSemaphore> imageAvailableSemaphores, renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     uint32_t currentFrame = 0;
 
-    // Camera
-    float camDistance = 2.5f;
-    float camPitch = 0.0f, camYaw = 0.0f, camRoll = 0.0f;
+    float camDistance = 2.5f, camPitch = 0.0f, camYaw = 0.0f, camRoll = 0.0f;
     glm::vec3 camTarget = glm::vec3(0.0f);
     bool waterOverlay = false;
     glm::vec2 lastMousePos;
@@ -133,12 +123,10 @@ private:
     bool keys[512] = {};
     float deltaTime = 0.0f;
 
-    // Depth
     VkImage depthImage = VK_NULL_HANDLE;
     VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
     VkImageView depthImageView = VK_NULL_HANDLE;
 
-    // Callbacks
     static void keyCallback(GLFWwindow* w, int key, int, int action, int) {
         auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
         if (action == GLFW_PRESS) {
@@ -170,7 +158,6 @@ private:
         app->camDistance = glm::clamp(app->camDistance, 1.08f, 5000.0f);
     }
 
-    // Vulkan helpers
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props) {
         VkPhysicalDeviceMemoryProperties memProps;
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProps);
@@ -248,12 +235,12 @@ private:
 
                       void createImage(uint32_t w, uint32_t h, VkFormat format, VkImageTiling tiling,
                                        VkImageUsageFlags usage, VkMemoryPropertyFlags props,
-                                       VkImage& image, VkDeviceMemory& memory, uint32_t mipLevels = 1) {
+                                       VkImage& image, VkDeviceMemory& memory) {
                           VkImageCreateInfo ii{};
                           ii.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
                           ii.imageType = VK_IMAGE_TYPE_2D;
                           ii.extent = {w, h, 1};
-                          ii.mipLevels = mipLevels;
+                          ii.mipLevels = 1;
                           ii.arrayLayers = 1;
                           ii.format = format;
                           ii.tiling = tiling;
@@ -265,12 +252,18 @@ private:
                               throw std::runtime_error("failed to create image!");
                           VkMemoryRequirements req;
                           vkGetImageMemoryRequirements(device, image, &req);
+                          std::cout << "📦 Image memory requirement: " << req.size / (1024*1024) << " MB\n";
                           VkMemoryAllocateInfo ai{};
                           ai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                           ai.allocationSize = req.size;
                           ai.memoryTypeIndex = findMemoryType(req.memoryTypeBits, props);
-                          if (vkAllocateMemory(device, &ai, nullptr, &memory) != VK_SUCCESS)
-                              throw std::runtime_error("failed to allocate image memory!");
+                          if (vkAllocateMemory(device, &ai, nullptr, &memory) != VK_SUCCESS) {
+                              std::cerr << "⚠️  Device-local allocation failed, trying host-visible...\n";
+                              ai.memoryTypeIndex = findMemoryType(req.memoryTypeBits,
+                                                                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                              if (vkAllocateMemory(device, &ai, nullptr, &memory) != VK_SUCCESS)
+                                  throw std::runtime_error("failed to allocate image memory (even with fallback)!");
+                          }
                           vkBindImageMemory(device, image, memory, 0);
                                        }
 
@@ -393,12 +386,11 @@ private:
                                            return sampler;
                                        }
 
-                                       // ---------- Initialisation ----------
                                        void initWindow() {
                                            glfwInit();
                                            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
                                            glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-                                           window = glfwCreateWindow(WIDTH, HEIGHT, "Square Map Globe", nullptr, nullptr);
+                                           window = glfwCreateWindow(WIDTH, HEIGHT, "Globe Viewer", nullptr, nullptr);
                                            glfwSetWindowUserPointer(window, this);
                                            glfwSetKeyCallback(window, keyCallback);
                                            glfwSetMouseButtonCallback(window, mouseButtonCallback);
@@ -430,15 +422,13 @@ private:
                                        void createInstance() {
                                            VkApplicationInfo ai{};
                                            ai.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-                                           ai.pApplicationName = "SquareMapGlobe";
+                                           ai.pApplicationName = "GlobeViewer";
                                            ai.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
                                            ai.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
                                            ai.apiVersion = VK_API_VERSION_1_3;
-
                                            uint32_t glfwCnt;
                                            const char** glfwExts = glfwGetRequiredInstanceExtensions(&glfwCnt);
                                            std::vector<const char*> exts(glfwExts, glfwExts + glfwCnt);
-
                                            VkInstanceCreateInfo ci{};
                                            ci.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
                                            ci.pApplicationInfo = &ai;
@@ -499,6 +489,10 @@ private:
                                                if (isDeviceSuitable(d)) { physicalDevice = d; break; }
                                            }
                                            if (!physicalDevice) throw std::runtime_error("no suitable GPU");
+                                           VkPhysicalDeviceProperties props;
+                                           vkGetPhysicalDeviceProperties(physicalDevice, &props);
+                                           std::cout << "🖥️  GPU: " << props.deviceName << "\n";
+                                           std::cout << "   Max texture size: " << props.limits.maxImageDimension2D << "\n";
                                        }
 
                                        bool isDeviceSuitable(VkPhysicalDevice dev) {
@@ -801,7 +795,7 @@ private:
                                                    float phi = (float)i * 2.0f * glm::pi<float>() / (float)lonSegs;
                                                    float x = glm::cos(phi) * sinTheta;
                                                    float z = glm::sin(phi) * sinTheta;
-                                                   vertices.push_back({ {x,y,z}, { (float)i / (float)lonSegs, (float)j / (float)latSegs } });
+                                                   vertices.push_back({{x,y,z}, {(float)i / (float)lonSegs, (float)j / (float)latSegs}});
                                                }
                                            }
                                            for (size_t j = 0; j < latSegs; ++j) {
@@ -839,49 +833,52 @@ private:
                                            vkDestroyBuffer(device, staging, nullptr); vkFreeMemory(device, stagingMem, nullptr);
                                        }
 
-                                       // ----- Load texture from input/squarecolormap.tif using GDAL -----
                                        void loadTexture() {
                                            std::string fname = "input/squarecolormap.tif";
                                            GDALAllRegister();
                                            GDALDataset* ds = (GDALDataset*)GDALOpen(fname.c_str(), GA_ReadOnly);
-                                           if (!ds) {
-                                               throw std::runtime_error("Failed to open " + fname + ". Run squaremaptest first.");
-                                           }
+                                           if (!ds) throw std::runtime_error("Failed to open " + fname);
                                            int w = ds->GetRasterXSize();
                                            int h = ds->GetRasterYSize();
                                            std::cout << "📂 Texture: " << w << " x " << h << "\n";
 
-                                           // Force power-of-two for simplicity, but we'll use whatever.
-                                           // We'll read the whole image into a buffer (might be huge if > 16384, but we target 16384).
-                                           size_t size = (size_t)w * h * 3;
-                                           std::vector<uint8_t> pixels(size);
+                                           // Read as RGBA
+                                           const int channels = 4;
+                                           size_t pixelBytes = w * h * channels;
+                                           std::vector<uint8_t> pixels(pixelBytes);
+                                           std::vector<uint8_t> rgb(w * h * 3);
                                            CPLErr err = ds->GetRasterBand(1)->RasterIO(GF_Read, 0, 0, w, h,
-                                                                                       pixels.data(), w, h, GDT_Byte, 3, 0);
+                                                                                       rgb.data(), w, h, GDT_Byte, 3, 0);
                                            GDALClose(ds);
-                                           if (err != CE_None) {
-                                               throw std::runtime_error("Failed to read texture pixels.");
+                                           if (err != CE_None) throw std::runtime_error("Failed to read texture pixels.");
+
+                                           // Expand RGB to RGBA
+                                           for (int i = 0; i < w * h; ++i) {
+                                               pixels[i*4 + 0] = rgb[i*3 + 0];
+                                               pixels[i*4 + 1] = rgb[i*3 + 1];
+                                               pixels[i*4 + 2] = rgb[i*3 + 2];
+                                               pixels[i*4 + 3] = 255;
                                            }
 
-                                           VkDeviceSize imageSize = size;
-                                           VkBuffer staging;
-                                           VkDeviceMemory stagingMem;
-                                           createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                           VkDeviceSize size = pixelBytes;
+                                           VkBuffer staging; VkDeviceMemory stagingMem;
+                                           createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                                         staging, stagingMem);
-                                           void* data; vkMapMemory(device, stagingMem, 0, imageSize, 0, &data);
-                                           memcpy(data, pixels.data(), imageSize);
+                                           void* data; vkMapMemory(device, stagingMem, 0, size, 0, &data);
+                                           memcpy(data, pixels.data(), size);
                                            vkUnmapMemory(device, stagingMem);
 
-                                           // Create image (VK_FORMAT_R8G8B8_UNORM) – we'll use it as is.
-                                           createImage((uint32_t)w, (uint32_t)h, VK_FORMAT_R8G8B8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                           createImage((uint32_t)w, (uint32_t)h, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                                                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
                                            transitionImageLayout(textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
                                            copyBufferToImage(staging, textureImage, w, h);
                                            transitionImageLayout(textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-                                           vkDestroyBuffer(device, staging, nullptr); vkFreeMemory(device, stagingMem, nullptr);
+                                           vkDestroyBuffer(device, staging, nullptr);
+                                           vkFreeMemory(device, stagingMem, nullptr);
 
-                                           textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8_UNORM);
+                                           textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM);
                                            textureSampler = createSampler();
                                        }
 
@@ -1099,7 +1096,6 @@ private:
                                        void cleanup() {
                                            if (device == VK_NULL_HANDLE) return;
                                            vkDeviceWaitIdle(device);
-
                                            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
                                                if (renderFinishedSemaphores[i]) vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
                                                if (imageAvailableSemaphores[i]) vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);

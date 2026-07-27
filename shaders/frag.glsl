@@ -10,6 +10,5 @@ layout(push_constant) uniform PushConstants {
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    vec4 texColor = texture(texSampler, fragTexCoord);
-    outColor = texColor;
+    outColor = texture(texSampler, fragTexCoord);
 }

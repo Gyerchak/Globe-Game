@@ -1,81 +1,78 @@
 // squaremaptest.cpp
-// Resize the 2:1 colour map to a square (height stretched to match width).
-// Compile: g++ -std=c++20 -O3 squaremaptest.cpp -o exe/squaremaptest -lgdal
-// Run: ./exe/squaremaptest
-
-#include <gdal_priv.h>
-#include <gdal_utils.h>
-#include <cpl_conv.h>
+// Resize the 2:1 colour map to a square using gdalwarp (subprocess).
+// Compile: g++ -std=c++20 -O3 squaremaptest.cpp -o exe/squaremaptest
+// Run: ./exe/squaremaptest [targetSize]   (default: 16384)
 
 #include <iostream>
 #include <filesystem>
-#include <vector>
 #include <string>
-#include <cmath>
-#include <algorithm>
+#include <cstdlib>
 
 namespace fs = std::filesystem;
 
-int main() {
-    GDALAllRegister();
-    std::ios::sync_with_stdio(false);
+int main(int argc, char* argv[]) {
+    int targetSize = 16384;
+    if (argc >= 2) {
+        targetSize = std::stoi(argv[1]);
+    }
 
-    // Input: from output/ (where CompressHeightMap placed it)
-    fs::path inPath = fs::current_path() / "output" / "heightmap_color.tif";   // <-- underscore
+    std::cout << "📐 Target size: " << targetSize << " x " << targetSize << "\n";
+    if (targetSize > 32768) {
+        std::cerr << "⚠️  WARNING: Target size > 32768 will produce a huge file (> 3 GB) and cannot be loaded by most GPUs.\n";
+        std::cerr << "   The output will be generated but the viewer will fail to load it.\n";
+        std::cerr << "   Consider using 16384 or 32768 for real‑time viewing.\n";
+    }
+
+    fs::path inPath = fs::current_path() / "output" / "heightmap_color.tif";
     fs::path outPath = fs::current_path() / "output" / "squarecolormap.tif";
     fs::path inCopyPath = fs::current_path() / "input" / "squarecolormap.tif";
 
     if (!fs::exists(inPath)) {
         std::cerr << "❌ Input file not found: " << inPath << "\n";
-        std::cerr << "   Please ensure you have run CompressHeightMap first.\n";
+        std::cerr << "   Please run CompressHeightMap first.\n";
         return 1;
     }
+
     fs::create_directories(outPath.parent_path());
     fs::create_directories(inCopyPath.parent_path());
 
-    GDALDataset* src = (GDALDataset*)GDALOpen(inPath.c_str(), GA_ReadOnly);
-    if (!src) {
-        std::cerr << "❌ Could not open " << inPath << "\n";
+    // Use a fixed cache of 8 GB – safe and accepted by GDAL
+    const int cacheMB = 8192;
+
+    // Build the gdalwarp command (no -progress)
+    std::string cmd = "gdalwarp -of GTiff "
+    "-co COMPRESS=LZW "
+    "-co PREDICTOR=2 "
+    "-co TILED=YES "
+    "-co BLOCKXSIZE=512 "
+    "-co BLOCKYSIZE=512 "
+    "-wm " + std::to_string(cacheMB) + " "
+    "-multi "
+    "-wo NUM_THREADS=ALL_CPUS "
+    "-ts " + std::to_string(targetSize) + " " + std::to_string(targetSize) + " "
+    "-r lanczos "
+    "-overwrite "
+    "\"" + inPath.string() + "\" "
+    "\"" + outPath.string() + "\"";
+
+    std::cout << "🚀 Running:\n" << cmd << "\n";
+    int ret = std::system(cmd.c_str());
+    if (ret != 0) {
+        std::cerr << "❌ gdalwarp failed with return code " << ret << "\n";
         return 1;
     }
 
-    const int targetSize = 16384; // 16K – adjust if you want larger/smaller
-    std::cout << "📐 Resizing from " << src->GetRasterXSize() << "x" << src->GetRasterYSize()
-    << " to " << targetSize << " x " << targetSize << "\n";
-
-    std::vector<std::string> warpArgsStr = {
-        "-of", "GTiff",
-        "-ts", std::to_string(targetSize), std::to_string(targetSize),
-        "-r", "lanczos",
-        "-overwrite"
-    };
-    std::vector<const char*> warpArgv;
-    warpArgv.reserve(warpArgsStr.size());
-    for (auto& s : warpArgsStr) warpArgv.push_back(s.c_str());
-    char** warpArgvPtr = const_cast<char**>(warpArgv.data());
-
-    GDALWarpAppOptions* warpOpts = GDALWarpAppOptionsNew(warpArgvPtr, nullptr);
-    if (!warpOpts) {
-        std::cerr << "❌ Failed to create warp options\n";
-        GDALClose(src);
-        return 1;
-    }
-
-    GDALDataset* dst = (GDALDataset*)GDALWarp(outPath.c_str(), nullptr, 1,
-                                              (GDALDatasetH*)&src, warpOpts, nullptr);
-    GDALWarpAppOptionsFree(warpOpts);
-    GDALClose(src);
-
-    if (!dst) {
-        std::cerr << "❌ Warp failed\n";
-        return 1;
-    }
-
-    GDALClose(dst);
     std::cout << "✅ Square map written to " << outPath << "\n";
 
-    fs::copy_file(outPath, inCopyPath, fs::copy_options::overwrite_existing);
-    std::cout << "📁 Copied to " << inCopyPath << "\n";
+    // If size is ≤ 32768, copy to input/ for viewer
+    if (targetSize <= 32768) {
+        fs::copy_file(outPath, inCopyPath, fs::copy_options::overwrite_existing);
+        std::cout << "📁 Copied to " << inCopyPath << " (for viewer)\n";
+    } else {
+        std::cerr << "⚠️  Output is too large for the viewer; it will NOT be copied to input/.\n";
+        std::cerr << "   You can use this file for offline processing only.\n";
+        std::cout << "   For viewing, generate a smaller version: ./exe/squaremaptest 16384\n";
+    }
 
     return 0;
 }
