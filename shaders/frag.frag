@@ -7,7 +7,7 @@ layout(binding = 2) uniform sampler2D gridSampler;       // grid overlay (R8, 32
 
 layout(push_constant) uniform PushConstants {
     int gridOverlay;      // 1 = show red fill
-    int gridLineOverlay;  // 1 = show vector lines
+    int gridLineOverlay;  // 1 = show vector grid lines
 } pc;
 
 layout(location = 0) out vec4 outColor;
@@ -29,27 +29,32 @@ void main() {
     if (pc.gridLineOverlay != 0) {
         const float gridWidth  = 32768.0;
         const float gridHeight = 32768.0;
+        const float GRID_STEP  = 32.0;   // draw a line every 32 cells (adjust for density)
 
-        // Compute grid cell coordinates
+        // Map UV to grid-cell coordinates
         vec2 gridUV = uv * vec2(gridWidth, gridHeight);
 
-        // Screen-space derivatives give the size of one pixel in grid-cell units
-        vec2 dpdx = fwidth(gridUV);
+        // Distance from the nearest stepped grid line, separately per axis
+        float distU = abs(fract(gridUV.x / GRID_STEP) - 0.5) * 2.0;   // 0 at line, 1 at midpoint
+        float distV = abs(fract(gridUV.y / GRID_STEP) - 0.5) * 2.0;
 
-        // Distance from cell edge in U and V directions (0 at edge, 0.5 at center)
-        vec2 dist = abs(fract(gridUV) - 0.5) * 2.0;   // 0 at edge, 1 at center
+        // Screen-space derivatives (how much one screen pixel corresponds to in gridUV units)
+        float dU = fwidth(gridUV.x);
+        float dV = fwidth(gridUV.y);
 
-        // Line width: one screen pixel wide in each direction
-        vec2 lineWidth = dpdx * 1.0;   // adjust multiplier for thicker lines
+        // Thickness: 2 screen pixels wide
+        float lineWidthU = dU * 2.0 / GRID_STEP;
+        float lineWidthV = dV * 2.0 / GRID_STEP;
 
-        // Create soft lines: 1.0 at cell edges, 0.0 inside cell
-        float line = 1.0 - smoothstep(0.0, lineWidth, dist);
+        // Smooth line for each axis
+        float lineU = 1.0 - smoothstep(0.0, lineWidthU, distU);
+        float lineV = 1.0 - smoothstep(0.0, lineWidthV, distV);
 
-        // Take the maximum of U and V lines (draws both horizontal and vertical lines)
-        float gridLine = max(line.x, line.y);
+        // Combine U and V lines (maximum of both)
+        float gridLine = max(lineU, lineV);
 
         // Blend a white line over the final color
-        finalColor = mix(finalColor, vec4(1.0), gridLine * 0.8);   // 0.8 opacity for visibility
+        finalColor = mix(finalColor, vec4(1.0), gridLine * 0.8);
     }
 
     outColor = finalColor;
