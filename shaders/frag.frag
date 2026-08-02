@@ -29,7 +29,7 @@ void main() {
     if (pc.gridLineOverlay != 0) {
         const float gridWidth  = 32768.0;
         const float gridHeight = 32768.0;
-        const float GRID_STEP  = 32.0;   // draw a line every 32 cells (adjust for density)
+        const float GRID_STEP  = 1.0;   // draw a line every 1 cells (adjust for density) used to be 32
 
         // Map UV to grid-cell coordinates
         vec2 gridUV = uv * vec2(gridWidth, gridHeight);
