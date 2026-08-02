@@ -72,6 +72,7 @@ private:
     void createSurface();
     void pickPhysicalDevice();
     void createLogicalDevice();
+
     struct QueueFamilyIndices {
         std::optional<uint32_t> graphics, present;
         bool isComplete() { return graphics && present; }
@@ -79,6 +80,14 @@ private:
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice dev);
     bool checkDeviceExtensionSupport(VkPhysicalDevice dev);
     bool isDeviceSuitable(VkPhysicalDevice dev);
+
+    // Swap chain support
+    struct SwapChainSupport {
+        VkSurfaceCapabilitiesKHR caps;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> modes;
+    };
+    SwapChainSupport querySwapChainSupport(VkPhysicalDevice dev);
 
     // Swap chain
     VkSwapchainKHR swapChain = VK_NULL_HANDLE;
@@ -105,6 +114,7 @@ private:
     void createRenderPass();
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
+    void createFramebuffers();          // <-- added
     std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
