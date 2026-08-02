@@ -87,4 +87,8 @@ output/
 exe/
 input/
 old/
-projekt_001          # <-- the main executable lives in root now
+
+bin/
+*.bin
+
+
