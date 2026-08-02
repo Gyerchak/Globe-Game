@@ -33,6 +33,7 @@ void GlobeApp::keyCallback(GLFWwindow* w, int key, int, int action, int) {
             case GLFW_KEY_ESCAPE: glfwSetWindowShouldClose(w, GLFW_TRUE); break;
             case GLFW_KEY_F: app->toggleFullscreen(); break;
             case GLFW_KEY_G: app->showGrid = !app->showGrid; break;
+            case GLFW_KEY_L: app->showGridLines = !app->showGridLines; break;
             default: break;
         }
         if (key == GLFW_KEY_LEFT_SHIFT || key == GLFW_KEY_RIGHT_SHIFT)

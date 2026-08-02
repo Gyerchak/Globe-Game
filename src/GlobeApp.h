@@ -40,7 +40,10 @@ struct UniformBufferObject {
     glm::vec4 cameraPos;
 };
 
-struct PushConstants { int gridOverlay; };
+struct PushConstants { 
+    int gridOverlay;
+    int gridOverlay;
+};
 
 class GlobeApp {
 public:
@@ -139,6 +142,7 @@ private:
     VkImageView gridImageView = VK_NULL_HANDLE;
     VkSampler gridSampler = VK_NULL_HANDLE;
     bool showGrid = false;
+    bool showGridLines = false;
     void loadGrid();
     void saveGridToFile();
 

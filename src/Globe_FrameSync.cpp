@@ -64,6 +64,7 @@ void GlobeApp::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex) {
 
     PushConstants pc{};
     pc.gridOverlay = showGrid ? 1 : 0;
+    pc.gridLineOverlay = showGridLines ? 1 : 0;
     vkCmdPushConstants(cmd, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pc);
 
     vkCmdDrawIndexed(cmd, (uint32_t)indices.size(), 1, 0, 0, 0);
