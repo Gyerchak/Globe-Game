@@ -42,7 +42,7 @@ struct UniformBufferObject {
 
 struct PushConstants { 
     int gridOverlay;
-    int gridOverlay;
+    int gridLineOverlay;
 };
 
 class GlobeApp {
