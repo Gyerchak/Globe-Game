@@ -49,7 +49,7 @@ void GlobeApp::loadGrid() {
 
     uint32_t y = 0;
     while (y < gridH) {
-        uint32_t rows = std::min(maxRowsPerChunk, gridH - y);
+        uint32_t rows = std::min(maxRowsPerChunk, (uint32_t)(gridH - y));
         VkDeviceSize chunkBytes = (VkDeviceSize)rows * gridW;
         memcpy(mapped, gridData.data() + (size_t)y * gridW, (size_t)chunkBytes);
         copyBufferToImageRegion(staging, gridImage, 0, y, (uint32_t)gridW, rows);

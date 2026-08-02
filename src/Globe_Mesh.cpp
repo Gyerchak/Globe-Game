@@ -1,6 +1,6 @@
 #include "GlobeApp.h"
 
-Vertex::VkVertexInputBindingDescription Vertex::getBindingDescription() {
+VkVertexInputBindingDescription Vertex::getBindingDescription() {
     VkVertexInputBindingDescription b{};
     b.binding = 0;
     b.stride = sizeof(Vertex);
