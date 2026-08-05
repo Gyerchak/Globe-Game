@@ -98,7 +98,7 @@ private:
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
-    std::vector<VkFramebuffer> swapChainFramebuffers;
+    // (swapChainFramebuffers are no longer used – we render offscreen)
     void createSwapChain();
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& avail);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avail);
@@ -109,6 +109,14 @@ private:
     VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
     VkImageView depthImageView = VK_NULL_HANDLE;
 
+    // Off‑screen 16‑bit rendering resources
+    VkFormat offscreenFormat = VK_FORMAT_B5G6R5_UNORM_PACK16;
+    VkImage offscreenImage = VK_NULL_HANDLE;
+    VkDeviceMemory offscreenImageMemory = VK_NULL_HANDLE;
+    VkImageView offscreenImageView = VK_NULL_HANDLE;
+    VkFramebuffer offscreenFramebuffer = VK_NULL_HANDLE;
+    void createOffscreenResources();
+
     // Pipeline
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
@@ -117,7 +125,7 @@ private:
     void createRenderPass();
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
-    void createFramebuffers();          // <-- added
+    void createFramebuffers() {}   // not used, empty
     std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
