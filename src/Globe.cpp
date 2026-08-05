@@ -19,11 +19,12 @@ void GlobeApp::initVulkan() {
     createImageViews();
     createDepthResources();              // full size depth (not used)
     createRenderPass();                  // uses swapChainImageFormat
+
+    createCommandPool();                 // <-- MUST be before any layout transitions
+
     createOffscreenResources();          // creates offscreen images + framebuffer
     createDescriptorSetLayout();
     createGraphicsPipeline();            // uses offscreenExtent for viewport
-    // createFramebuffers() is empty
-    createCommandPool();
     prepareSphere();
     loadTexture();
     loadGrid();
