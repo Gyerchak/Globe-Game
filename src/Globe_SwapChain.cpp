@@ -42,7 +42,9 @@ VkSurfaceFormatKHR GlobeApp::chooseSwapSurfaceFormat(const std::vector<VkSurface
             f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             return f;
     }
-    return avail[0];
+    throw std::runtime_error(
+        "VK_FORMAT_B5G5R5A1_UNORM_PACK16 not supported as a surface format! "
+        "Your GPU/driver does not offer this 16-bit colour format.");
 }
 
 VkPresentModeKHR GlobeApp::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avail) {
