@@ -29,32 +29,27 @@ void main() {
     if (pc.gridLineOverlay != 0) {
         const float gridWidth  = 32768.0;
         const float gridHeight = 32768.0;
-        const float GRID_STEP  = 1.0;   // draw a line every 1 cells (adjust for density) used to be 32
+        const float GRID_STEP  = 1.0;   // draw a line every 1 cell
 
-        // Map UV to grid-cell coordinates
         vec2 gridUV = uv * vec2(gridWidth, gridHeight);
 
-        // Distance from the nearest stepped grid line, separately per axis
-        float distU = abs(fract(gridUV.x / GRID_STEP) - 0.5) * 2.0;   // 0 at line, 1 at midpoint
+        float distU = abs(fract(gridUV.x / GRID_STEP) - 0.5) * 2.0;
         float distV = abs(fract(gridUV.y / GRID_STEP) - 0.5) * 2.0;
 
-        // Screen-space derivatives (how much one screen pixel corresponds to in gridUV units)
         float dU = fwidth(gridUV.x);
         float dV = fwidth(gridUV.y);
 
-        // Thickness: 2 screen pixels wide
         float lineWidthU = dU * 2.0 / GRID_STEP;
         float lineWidthV = dV * 2.0 / GRID_STEP;
 
-        // Smooth line for each axis
         float lineU = 1.0 - smoothstep(0.0, lineWidthU, distU);
         float lineV = 1.0 - smoothstep(0.0, lineWidthV, distV);
 
-        // Combine U and V lines (maximum of both)
         float gridLine = max(lineU, lineV);
 
-        // Blend a white line over the final color
         finalColor = mix(finalColor, vec4(1.0), gridLine * 0.8);
     }
+
+    // Force alpha to 1.0 (harmless for B5G6R5, but safe)
     outColor = vec4(finalColor.rgb, 1.0);
 }
