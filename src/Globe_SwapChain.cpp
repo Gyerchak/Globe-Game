@@ -37,11 +37,11 @@ void GlobeApp::createSwapChain() {
 }
 
 VkSurfaceFormatKHR GlobeApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& avail) {
-    for (auto& f : avail)
-        if (f.format == VK_FORMAT_B8G8R8A8_SRGB && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+    for (auto& f : avail) {
+        if (f.format == VK_FORMAT_B5G5R5A1_UNORM_PACK16 &&
+            f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             return f;
-    return avail[0];
-}
+    }
 
 VkPresentModeKHR GlobeApp::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avail) {
     for (auto& m : avail)
