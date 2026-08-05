@@ -23,13 +23,13 @@ VkShaderModule GlobeApp::createShaderModule(const std::vector<char>& code) {
 
 void GlobeApp::createRenderPass() {
     VkAttachmentDescription color{}, depth{};
-    // Use the off‑screen 16‑bit format
-    color.format = offscreenFormat;
+    // Use the same format as swapchain (will also match offscreen image)
+    color.format = swapChainImageFormat;
     color.samples = VK_SAMPLE_COUNT_1_BIT;
     color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;          // we need to copy it later
+    color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    color.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;  // will be blitted from
+    color.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     depth.format = VK_FORMAT_D32_SFLOAT;
     depth.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -114,8 +114,9 @@ void GlobeApp::createGraphicsPipeline() {
     ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     ia.primitiveRestartEnable = VK_FALSE;
 
-    VkViewport vp{0,0,(float)swapChainExtent.width,(float)swapChainExtent.height,0,1};
-    VkRect2D sc{{0,0}, swapChainExtent};
+    // Viewport and scissor must match the offscreen extent (fixed resolution)
+    VkViewport vp{0, 0, (float)offscreenExtent.width, (float)offscreenExtent.height, 0, 1};
+    VkRect2D sc{{0, 0}, offscreenExtent};
     VkPipelineViewportStateCreateInfo vs{};
     vs.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     vs.viewportCount = 1;
@@ -140,7 +141,6 @@ void GlobeApp::createGraphicsPipeline() {
     ds.depthWriteEnable = VK_TRUE;
     ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 
-    // No blending
     VkPipelineColorBlendAttachmentState cba{};
     cba.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     cba.blendEnable = VK_FALSE;
