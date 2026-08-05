@@ -61,6 +61,12 @@ void GlobeApp::mainLoop() {
         deltaTime = std::chrono::duration<float>(cur - lastTime).count();
         lastTime = cur;
         glfwPollEvents();
+
+        // ✅ Handle window resize without changing internal resolution
+        if (framebufferResized) {
+            recreateSwapChain();
+        }
+
         updateCamera();
         drawFrame();
     }
