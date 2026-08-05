@@ -23,25 +23,30 @@ VkShaderModule GlobeApp::createShaderModule(const std::vector<char>& code) {
 
 void GlobeApp::createRenderPass() {
     VkAttachmentDescription color{}, depth{};
-    color.format = swapChainImageFormat;
+    // Use the off‑screen 16‑bit format
+    color.format = offscreenFormat;
     color.samples = VK_SAMPLE_COUNT_1_BIT;
     color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;          // we need to copy it later
     color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    color.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    color.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;  // will be blitted from
+
     depth.format = VK_FORMAT_D32_SFLOAT;
     depth.samples = VK_SAMPLE_COUNT_1_BIT;
     depth.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depth.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depth.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     VkAttachmentReference colorRef{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
     VkAttachmentReference depthRef{1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorRef;
     subpass.pDepthStencilAttachment = &depthRef;
+
     std::array<VkAttachmentDescription, 2> atts = {color, depth};
     VkRenderPassCreateInfo rpi{};
     rpi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -135,6 +140,7 @@ void GlobeApp::createGraphicsPipeline() {
     ds.depthWriteEnable = VK_TRUE;
     ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 
+    // No blending
     VkPipelineColorBlendAttachmentState cba{};
     cba.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     cba.blendEnable = VK_FALSE;
@@ -175,21 +181,4 @@ void GlobeApp::createGraphicsPipeline() {
         throw std::runtime_error("failed to create graphics pipeline!");
     vkDestroyShaderModule(device, vertMod, nullptr);
     vkDestroyShaderModule(device, fragMod, nullptr);
-}
-
-void GlobeApp::createFramebuffers() {
-    swapChainFramebuffers.resize(swapChainImageViews.size());
-    for (size_t i = 0; i < swapChainImageViews.size(); ++i) {
-        VkImageView attachments[] = {swapChainImageViews[i], depthImageView};
-        VkFramebufferCreateInfo fi{};
-        fi.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fi.renderPass = renderPass;
-        fi.attachmentCount = 2;
-        fi.pAttachments = attachments;
-        fi.width = swapChainExtent.width;
-        fi.height = swapChainExtent.height;
-        fi.layers = 1;
-        if (vkCreateFramebuffer(device, &fi, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
-            throw std::runtime_error("failed to create framebuffer!");
-    }
 }
