@@ -13,25 +13,16 @@ void GlobeApp::initVulkan() {
     pickPhysicalDevice();
     createLogicalDevice();
 
-    // Check if B5G6R5 can be used as a colour attachment
-    VkFormatProperties formatProps;
-    vkGetPhysicalDeviceFormatProperties(physicalDevice, offscreenFormat, &formatProps);
-    if (!(formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)) {
-        throw std::runtime_error(
-            "VK_FORMAT_B5G6R5_UNORM_PACK16 not supported as a colour attachment! "
-            "Your GPU cannot render to this format. "
-            "Try using a lower resolution off‑screen target (Option B) or a different format.");
-    }
-    std::cout << "✅ B5G6R5 colour attachment supported\n";
+    loadSettings();                      // reads file/settings.cfg
 
     createSwapChain();
     createImageViews();
-    createDepthResources();
-    createOffscreenResources();          // <-- new
-    createRenderPass();                  // depends on offscreenFormat
+    createDepthResources();              // full size depth (not used)
+    createRenderPass();                  // uses swapChainImageFormat
+    createOffscreenResources();          // creates offscreen images + framebuffer
     createDescriptorSetLayout();
-    createGraphicsPipeline();
-    // createFramebuffers() is a no-op
+    createGraphicsPipeline();            // uses offscreenExtent for viewport
+    // createFramebuffers() is empty
     createCommandPool();
     prepareSphere();
     loadTexture();
