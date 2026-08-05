@@ -10,6 +10,12 @@ void GlobeApp::initWindow() {
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetScrollCallback(window, scrollCallback);
+    glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+}
+
+void GlobeApp::framebufferResizeCallback(GLFWwindow* w, int width, int height) {
+    auto app = reinterpret_cast<GlobeApp*>(glfwGetWindowUserPointer(w));
+    app->framebufferResized = true;
 }
 
 void GlobeApp::toggleFullscreen() {
