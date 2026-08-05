@@ -43,13 +43,13 @@ void GlobeApp::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex) {
     bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     vkBeginCommandBuffer(cmd, &bi);
 
-    // ----- 1. Render to off‑screen 16‑bit framebuffer -----
+    // ----- 1. Render to off‑screen framebuffer -----
     VkRenderPassBeginInfo rpi{};
     rpi.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     rpi.renderPass = renderPass;
     rpi.framebuffer = offscreenFramebuffer;
-    rpi.renderArea = {{0,0}, swapChainExtent};
-    VkClearValue colorClear{0.35f, 0.55f, 0.75f, 1.0f};   // alpha=1, will be quantised
+    rpi.renderArea = {{0, 0}, offscreenExtent};
+    VkClearValue colorClear{0.35f, 0.55f, 0.75f, 1.0f};
     VkClearValue depthClear{1.0f, 0};
     std::array<VkClearValue, 2> clears = {colorClear, depthClear};
     rpi.clearValueCount = 2;
@@ -71,22 +71,19 @@ void GlobeApp::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex) {
     vkCmdDrawIndexed(cmd, (uint32_t)indices.size(), 1, 0, 0, 0);
     vkCmdEndRenderPass(cmd);
 
-    // ----- 2. Transition off‑screen image from color attachment to transfer source -----
+    // ----- 2. Transition offscreen color to transfer source -----
     VkImageMemoryBarrier offscreenBarrier{};
     offscreenBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     offscreenBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     offscreenBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     offscreenBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     offscreenBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    offscreenBarrier.image = offscreenImage;
+    offscreenBarrier.image = offscreenColorImage;
     offscreenBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    offscreenBarrier.subresourceRange.baseMipLevel = 0;
     offscreenBarrier.subresourceRange.levelCount = 1;
-    offscreenBarrier.subresourceRange.baseArrayLayer = 0;
     offscreenBarrier.subresourceRange.layerCount = 1;
     offscreenBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     offscreenBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
     vkCmdPipelineBarrier(cmd,
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
         VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -95,33 +92,29 @@ void GlobeApp::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex) {
     // ----- 3. Transition swapchain image to transfer destination -----
     VkImageMemoryBarrier swapchainBarrier{};
     swapchainBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    swapchainBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;   // first use after acquire
+    swapchainBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     swapchainBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     swapchainBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     swapchainBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     swapchainBarrier.image = swapChainImages[imageIndex];
     swapchainBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    swapchainBarrier.subresourceRange.baseMipLevel = 0;
     swapchainBarrier.subresourceRange.levelCount = 1;
-    swapchainBarrier.subresourceRange.baseArrayLayer = 0;
     swapchainBarrier.subresourceRange.layerCount = 1;
     swapchainBarrier.srcAccessMask = 0;
     swapchainBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
     vkCmdPipelineBarrier(cmd,
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
         VK_PIPELINE_STAGE_TRANSFER_BIT,
         0, 0, nullptr, 0, nullptr, 1, &swapchainBarrier);
 
-    // ----- 4. Blit (copy) off‑screen image to swapchain -----
+    // ----- 4. Blit (scale) offscreen -> swapchain -----
     VkImageBlit blit{};
     blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     blit.srcSubresource.mipLevel = 0;
     blit.srcSubresource.baseArrayLayer = 0;
     blit.srcSubresource.layerCount = 1;
     blit.srcOffsets[0] = {0, 0, 0};
-    blit.srcOffsets[1] = {(int32_t)swapChainExtent.width, (int32_t)swapChainExtent.height, 1};
-
+    blit.srcOffsets[1] = {(int32_t)offscreenExtent.width, (int32_t)offscreenExtent.height, 1};
     blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     blit.dstSubresource.mipLevel = 0;
     blit.dstSubresource.baseArrayLayer = 0;
@@ -130,16 +123,16 @@ void GlobeApp::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex) {
     blit.dstOffsets[1] = {(int32_t)swapChainExtent.width, (int32_t)swapChainExtent.height, 1};
 
     vkCmdBlitImage(cmd,
-                   offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                   offscreenColorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                    swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                   1, &blit, VK_FILTER_NEAREST);
+                   1, &blit,
+                   VK_FILTER_LINEAR);   // smooth scaling
 
     // ----- 5. Transition swapchain image to present layout -----
     swapchainBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     swapchainBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     swapchainBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     swapchainBarrier.dstAccessMask = 0;
-
     vkCmdPipelineBarrier(cmd,
         VK_PIPELINE_STAGE_TRANSFER_BIT,
         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
