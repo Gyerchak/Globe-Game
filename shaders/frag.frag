@@ -56,6 +56,7 @@ void main() {
         // Blend a white line over the final color
         finalColor = mix(finalColor, vec4(1.0), gridLine * 0.8);
     }
-
+    outColor.rgb = finalColor.rgb;
+    outColor.a = 1.0;
     outColor = finalColor;
 }
