@@ -1,4 +1,5 @@
 #include "GlobeApp.h"
+#include <thread>
 
 glm::vec3 GlobeApp::getCameraPos() {
     float cp = glm::cos(camPitch), sp = glm::sin(camPitch);
@@ -56,19 +57,35 @@ void GlobeApp::updateCamera() {
 
 void GlobeApp::mainLoop() {
     auto lastTime = std::chrono::high_resolution_clock::now();
+    const double targetFrameDuration = (targetFPS > 0.0f) ? (1.0 / targetFPS) : 0.0;
+
     while (!glfwWindowShouldClose(window)) {
-        auto cur = std::chrono::high_resolution_clock::now();
+        auto frameStart = std::chrono::high_resolution_clock::now();
+
+        // Delta time for camera / physics
+        auto cur = frameStart;
         deltaTime = std::chrono::duration<float>(cur - lastTime).count();
         lastTime = cur;
+
         glfwPollEvents();
 
-        // ✅ Handle window resize without changing internal resolution
+        // Handle window resize (keeps internal resolution unchanged)
         if (framebufferResized) {
             recreateSwapChain();
         }
 
         updateCamera();
         drawFrame();
+
+        // --- FPS limiter (CPU‑side) ---
+        if (targetFPS > 0.0f) {
+            auto frameEnd = std::chrono::high_resolution_clock::now();
+            double workTime = std::chrono::duration<double>(frameEnd - frameStart).count();
+            if (workTime < targetFrameDuration) {
+                double sleepTime = targetFrameDuration - workTime;
+                std::this_thread::sleep_for(std::chrono::duration<double>(sleepTime));
+            }
+        }
     }
     vkDeviceWaitIdle(device);
 }
