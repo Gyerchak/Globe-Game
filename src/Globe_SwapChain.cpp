@@ -15,7 +15,7 @@ void GlobeApp::createSwapChain() {
     sci.imageColorSpace = fmt.colorSpace;
     sci.imageExtent = ext;
     sci.imageArrayLayers = 1;
-    sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;  // allow blit into
     auto idx = findQueueFamilies(physicalDevice);
     uint32_t fams[] = {idx.graphics.value(), idx.present.value()};
     if (idx.graphics != idx.present) {
@@ -37,14 +37,14 @@ void GlobeApp::createSwapChain() {
 }
 
 VkSurfaceFormatKHR GlobeApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& avail) {
+    // Preferred: standard 32-bit sRGB
     for (auto& f : avail) {
-        if (f.format == VK_FORMAT_B5G5R5A1_UNORM_PACK16 &&
+        if (f.format == VK_FORMAT_B8G8R8A8_SRGB &&
             f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             return f;
     }
-    throw std::runtime_error(
-        "VK_FORMAT_B5G5R5A1_UNORM_PACK16 not supported as a surface format! "
-        "Your GPU/driver does not offer this 16-bit colour format.");
+    // Fallback: first available
+    return avail[0];
 }
 
 VkPresentModeKHR GlobeApp::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avail) {
