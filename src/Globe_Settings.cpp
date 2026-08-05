@@ -4,13 +4,15 @@
 #include <algorithm>
 
 void GlobeApp::loadSettings() {
-    // Default fallback
+    // Defaults
     offscreenExtent.width = 960;
     offscreenExtent.height = 540;
+    targetFPS = 30.0f;          // "Standard"
+    vsyncEnabled = false;
 
-    std::ifstream cfg("file/settings.cfg");
+    std::ifstream cfg("files/settings.cfg");   // change to "file/settings.cfg" if your folder is named 'file'
     if (!cfg) {
-        std::cerr << "⚠️  No settings file found, using default 960x540\n";
+        std::cerr << "⚠️  No settings file found, using default 960x540 / 30 FPS / VSync off\n";
         return;
     }
 
@@ -41,8 +43,26 @@ void GlobeApp::loadSettings() {
                 }
             }
         }
+        else if (key == "fps_limit") {
+            if (val == "uncapped" || val == "0") {
+                targetFPS = 0.0f;
+            } else {
+                try {
+                    float fps = std::stof(val);
+                    if (fps > 0.0f) targetFPS = fps;
+                } catch (...) {
+                    std::cerr << "⚠️  Invalid fps_limit, keeping default 30\n";
+                }
+            }
+        }
+        else if (key == "vsync") {
+            if (val == "true" || val == "1") vsyncEnabled = true;
+            else if (val == "false" || val == "0") vsyncEnabled = false;
+            else std::cerr << "⚠️  Invalid vsync value, keeping default off\n";
+        }
     }
 
-    std::cout << "🎯 Internal render resolution: "
-              << offscreenExtent.width << "x" << offscreenExtent.height << "\n";
+    std::cout << "🎯 Internal resolution: " << offscreenExtent.width << "x" << offscreenExtent.height << "\n";
+    std::cout << "⏱️  Target FPS: " << (targetFPS > 0.0f ? std::to_string((int)targetFPS) : "uncapped") << "\n";
+    std::cout << "📺 VSync: " << (vsyncEnabled ? "ON" : "OFF") << "\n";
 }
