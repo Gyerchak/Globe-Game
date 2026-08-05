@@ -64,6 +64,7 @@ private:
     static void mouseButtonCallback(GLFWwindow* w, int button, int action, int mods);
     static void cursorPosCallback(GLFWwindow* w, double xpos, double ypos);
     static void scrollCallback(GLFWwindow* w, double xoffset, double yoffset);
+    static void framebufferResizeCallback(GLFWwindow* w, int width, int height);
 
     // Vulkan core
     VkInstance instance = VK_NULL_HANDLE;
@@ -98,24 +99,33 @@ private:
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
-    // (swapChainFramebuffers are no longer used – we render offscreen)
+    // (swapChainFramebuffers not used)
     void createSwapChain();
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& avail);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avail);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& caps);
     void createImageViews();
-    void createDepthResources();
+    void recreateSwapChain();
+    bool framebufferResized = false;
+
+    // Depth resources (full size, not used for offscreen – kept for simplicity)
     VkImage depthImage = VK_NULL_HANDLE;
     VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
     VkImageView depthImageView = VK_NULL_HANDLE;
+    void createDepthResources();
 
-    // Off‑screen 16‑bit rendering resources
-    VkFormat offscreenFormat = VK_FORMAT_B5G6R5_UNORM_PACK16;
-    VkImage offscreenImage = VK_NULL_HANDLE;
-    VkDeviceMemory offscreenImageMemory = VK_NULL_HANDLE;
-    VkImageView offscreenImageView = VK_NULL_HANDLE;
+    // Off‑screen fixed‑resolution rendering
+    VkExtent2D offscreenExtent{};
+    VkImage offscreenColorImage = VK_NULL_HANDLE;
+    VkDeviceMemory offscreenColorMemory = VK_NULL_HANDLE;
+    VkImageView offscreenColorView = VK_NULL_HANDLE;
+    VkImage offscreenDepthImage = VK_NULL_HANDLE;
+    VkDeviceMemory offscreenDepthMemory = VK_NULL_HANDLE;
+    VkImageView offscreenDepthView = VK_NULL_HANDLE;
     VkFramebuffer offscreenFramebuffer = VK_NULL_HANDLE;
+    void loadSettings();
     void createOffscreenResources();
+    void destroyOffscreenResources();
 
     // Pipeline
     VkRenderPass renderPass = VK_NULL_HANDLE;
@@ -125,7 +135,7 @@ private:
     void createRenderPass();
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
-    void createFramebuffers() {}   // not used, empty
+    void createFramebuffers() {}  // not used
     std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
@@ -199,6 +209,6 @@ private:
     void copyBufferToImageRegion(VkBuffer buffer, VkImage image, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
     VkSampler createSampler();
 
-    void initVulkan();  // orchestrates all init steps
+    void initVulkan();
     void cleanup();
 };
