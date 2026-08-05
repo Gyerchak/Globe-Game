@@ -21,6 +21,7 @@
 #include <chrono>
 #include <algorithm>
 #include <cmath>
+#include <thread>                     // for std::this_thread::sleep_for
 
 constexpr int WIDTH = 1280;
 constexpr int HEIGHT = 720;
@@ -40,7 +41,7 @@ struct UniformBufferObject {
     glm::vec4 cameraPos;
 };
 
-struct PushConstants { 
+struct PushConstants {
     int gridOverlay;
     int gridLineOverlay;
 };
@@ -99,7 +100,6 @@ private:
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
     std::vector<VkImageView> swapChainImageViews;
-    // (swapChainFramebuffers not used)
     void createSwapChain();
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& avail);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avail);
@@ -108,7 +108,7 @@ private:
     void recreateSwapChain();
     bool framebufferResized = false;
 
-    // Depth resources (full size, not used for offscreen – kept for simplicity)
+    // Depth resources (full size, kept for safety)
     VkImage depthImage = VK_NULL_HANDLE;
     VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
     VkImageView depthImageView = VK_NULL_HANDLE;
@@ -127,6 +127,10 @@ private:
     void createOffscreenResources();
     void destroyOffscreenResources();
 
+    // FPS control
+    float targetFPS = 30.0f;          // 0 = uncapped
+    bool vsyncEnabled = false;
+
     // Pipeline
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
@@ -135,7 +139,7 @@ private:
     void createRenderPass();
     void createDescriptorSetLayout();
     void createGraphicsPipeline();
-    void createFramebuffers() {}  // not used
+    void createFramebuffers() {}      // not used
     std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& code);
 
