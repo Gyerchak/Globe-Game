@@ -15,7 +15,8 @@ void GlobeApp::createSwapChain() {
     sci.imageColorSpace = fmt.colorSpace;
     sci.imageExtent = ext;
     sci.imageArrayLayers = 1;
-    sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;  // allow blit into
+    // Need transfer dst for blitting
+    sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     auto idx = findQueueFamilies(physicalDevice);
     uint32_t fams[] = {idx.graphics.value(), idx.present.value()};
     if (idx.graphics != idx.present) {
@@ -37,13 +38,10 @@ void GlobeApp::createSwapChain() {
 }
 
 VkSurfaceFormatKHR GlobeApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& avail) {
-    // Preferred: standard 32-bit sRGB
-    for (auto& f : avail) {
-        if (f.format == VK_FORMAT_B8G8R8A8_SRGB &&
-            f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+    // Prefer 32-bit sRGB
+    for (auto& f : avail)
+        if (f.format == VK_FORMAT_B8G8R8A8_SRGB && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             return f;
-    }
-    // Fallback: first available
     return avail[0];
 }
 
@@ -64,6 +62,29 @@ void GlobeApp::createImageViews() {
     swapChainImageViews.resize(swapChainImages.size());
     for (size_t i = 0; i < swapChainImages.size(); ++i)
         swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat);
+}
+
+void GlobeApp::recreateSwapChain() {
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwWaitEvents();
+        glfwGetFramebufferSize(window, &width, &height);
+    }
+
+    vkDeviceWaitIdle(device);
+
+    // Destroy old swapchain views
+    for (auto& iv : swapChainImageViews)
+        if (iv) vkDestroyImageView(device, iv, nullptr);
+    swapChainImageViews.clear();
+
+    vkDestroySwapchainKHR(device, swapChain, nullptr);
+
+    createSwapChain();
+    createImageViews();
+    // Offscreen resources are NOT recreated – resolution stays the same
+    framebufferResized = false;
 }
 
 void GlobeApp::createDepthResources() {
