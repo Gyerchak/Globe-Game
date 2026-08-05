@@ -15,7 +15,6 @@ void GlobeApp::createSwapChain() {
     sci.imageColorSpace = fmt.colorSpace;
     sci.imageExtent = ext;
     sci.imageArrayLayers = 1;
-    // Need transfer dst for blitting
     sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     auto idx = findQueueFamilies(physicalDevice);
     uint32_t fams[] = {idx.graphics.value(), idx.present.value()};
@@ -38,7 +37,6 @@ void GlobeApp::createSwapChain() {
 }
 
 VkSurfaceFormatKHR GlobeApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& avail) {
-    // Prefer 32-bit sRGB
     for (auto& f : avail)
         if (f.format == VK_FORMAT_B8G8R8A8_SRGB && f.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             return f;
@@ -46,9 +44,21 @@ VkSurfaceFormatKHR GlobeApp::chooseSwapSurfaceFormat(const std::vector<VkSurface
 }
 
 VkPresentModeKHR GlobeApp::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avail) {
-    for (auto& m : avail)
-        if (m == VK_PRESENT_MODE_MAILBOX_KHR) return m;
-    return VK_PRESENT_MODE_FIFO_KHR;
+    auto hasMode = [&](VkPresentModeKHR mode) {
+        return std::find(avail.begin(), avail.end(), mode) != avail.end();
+    };
+
+    if (vsyncEnabled) {
+        // VSync on → use classic FIFO (always available)
+        return VK_PRESENT_MODE_FIFO_KHR;
+    } else {
+        // VSync off → prefer MAILBOX (tearing‑free uncapped), then IMMEDIATE, fallback FIFO
+        if (hasMode(VK_PRESENT_MODE_MAILBOX_KHR))
+            return VK_PRESENT_MODE_MAILBOX_KHR;
+        if (hasMode(VK_PRESENT_MODE_IMMEDIATE_KHR))
+            return VK_PRESENT_MODE_IMMEDIATE_KHR;
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
 }
 
 VkExtent2D GlobeApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& caps) {
@@ -74,7 +84,6 @@ void GlobeApp::recreateSwapChain() {
 
     vkDeviceWaitIdle(device);
 
-    // Destroy old swapchain views
     for (auto& iv : swapChainImageViews)
         if (iv) vkDestroyImageView(device, iv, nullptr);
     swapChainImageViews.clear();
@@ -83,7 +92,6 @@ void GlobeApp::recreateSwapChain() {
 
     createSwapChain();
     createImageViews();
-    // Offscreen resources are NOT recreated – resolution stays the same
     framebufferResized = false;
 }
 
