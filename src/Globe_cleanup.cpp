@@ -33,11 +33,8 @@ void GlobeApp::cleanup() {
     if (gridImage) vkDestroyImage(device, gridImage, nullptr);
     if (gridImageMemory) vkFreeMemory(device, gridImageMemory, nullptr);
 
-    // Off‑screen resources
-    if (offscreenFramebuffer) vkDestroyFramebuffer(device, offscreenFramebuffer, nullptr);
-    if (offscreenImageView) vkDestroyImageView(device, offscreenImageView, nullptr);
-    if (offscreenImage) vkDestroyImage(device, offscreenImage, nullptr);
-    if (offscreenImageMemory) vkFreeMemory(device, offscreenImageMemory, nullptr);
+    // Offscreen resources
+    destroyOffscreenResources();
 
     if (descriptorPool) vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     if (graphicsPipeline) vkDestroyPipeline(device, graphicsPipeline, nullptr);
@@ -45,7 +42,7 @@ void GlobeApp::cleanup() {
     if (descriptorSetLayout) vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
     if (renderPass) vkDestroyRenderPass(device, renderPass, nullptr);
 
-    // No swapChainFramebuffers to destroy
+    // Depth (full size, unused)
     if (depthImageView) vkDestroyImageView(device, depthImageView, nullptr);
     if (depthImage) vkDestroyImage(device, depthImage, nullptr);
     if (depthImageMemory) vkFreeMemory(device, depthImageMemory, nullptr);
