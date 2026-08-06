@@ -52,7 +52,7 @@ void GlobeApp::updateCamera() {
     ubo.view = view;
     ubo.proj = proj;
     ubo.cameraPos = glm::vec4(camPos, 0.0f);
-    ubo.displacementScale = 0.15f;   // Heightmap strength – adjust as needed
+    ubo.displacementScale = 0.03f;   // Heightmap strength – adjust as needed
     memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 }
 
