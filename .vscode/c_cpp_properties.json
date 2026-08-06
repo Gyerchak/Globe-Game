@@ -6,9 +6,11 @@
         "${workspaceFolder}/**",
         "${workspaceFolder}/src",
         "/usr/include/vulkan",
-        "/usr/include/glm"
+        "/usr/include/glm",
+        "/usr/include"
       ],
       "compilerPath": "/usr/bin/g++",
+      "compileCommands": "${workspaceFolder}/compile_commands.json",
       "cStandard": "${default}",
       "cppStandard": "c++20",
       "intelliSenseMode": "linux-gcc-x64",
