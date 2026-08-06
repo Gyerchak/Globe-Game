@@ -60,6 +60,21 @@ void GlobeApp::updateCamera() {
     }
     float fovDeg = glm::mix(baseFovDeg, maxFovDeg, t);
     glm::mat4 proj = glm::perspective(glm::radians(fovDeg), aspect, nearPlane, farPlane);
+
+    // Debug: print cam distance and current FOV occasionally (rate-limited)
+    static auto _lastLog = std::chrono::high_resolution_clock::now();
+    static float _lastFov = 0.0f;
+    static float _lastDist = 0.0f;
+    auto _now = std::chrono::high_resolution_clock::now();
+    if (std::abs(camDistance - _lastDist) > 0.1f || std::abs(fovDeg - _lastFov) > 0.1f) {
+        auto elapsed = std::chrono::duration<double>(_now - _lastLog).count();
+        if (elapsed > 0.4) {
+            std::cout << "[CAM] dist=" << camDistance << " fov=" << fovDeg << " near=" << nearPlane << " far=" << farPlane << std::endl;
+            _lastLog = _now;
+            _lastFov = fovDeg;
+            _lastDist = camDistance;
+        }
+    }
     proj[1][1] *= -1;
     proj[2][2] = proj[2][2] * 0.5f + proj[3][2] * 0.5f;
     proj[2][3] = proj[2][3] * 0.5f + proj[3][3] * 0.5f;
