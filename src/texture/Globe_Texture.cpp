@@ -74,7 +74,7 @@ void GlobeApp::loadTexture() {
 }
 
 void GlobeApp::loadHeightmap() {
-    std::string fname = "input/heightmap.png";
+    std::string fname = "files/map/heightmap.png";
     GDALAllRegister();
     GDALDataset* ds = (GDALDataset*)GDALOpen(fname.c_str(), GA_ReadOnly);
     if (!ds) throw std::runtime_error("Failed to open heightmap: " + fname);
