@@ -5,7 +5,9 @@ content/
 exe/
 input/
 logs/
+obj/
 output/
+shaders/
 tmp/
 #Files/
 files/map
