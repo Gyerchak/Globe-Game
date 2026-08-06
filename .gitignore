@@ -38,6 +38,7 @@
 *.exe
 *.out
 *.app
+Globe
 
 # Build directories
 build/
