@@ -52,6 +52,7 @@ void GlobeApp::updateCamera() {
     ubo.view = view;
     ubo.proj = proj;
     ubo.cameraPos = glm::vec4(camPos, 0.0f);
+    ubo.displacementScale = 0.15f;   // 👈 set a value, or load from settings
     memcpy(uniformBuffersMapped[currentFrame], &ubo, sizeof(ubo));
 }
 
