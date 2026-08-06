@@ -2,19 +2,16 @@
   "configurations": [
     {
       "name": "linux-gcc-x64",
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
       "includePath": [
         "${workspaceFolder}/**",
-        "${workspaceFolder}/src",
-        "/usr/include/vulkan",
-        "/usr/include/glm"
+        "${workspaceFolder}/src"
       ],
       "compilerPath": "/usr/bin/g++",
       "cStandard": "${default}",
       "cppStandard": "c++20",
       "intelliSenseMode": "linux-gcc-x64",
-      "compilerArgs": [
-        ""
-      ]
+      "compilerArgs": []
     }
   ],
   "version": 4
