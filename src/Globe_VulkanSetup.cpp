@@ -1,14 +1,40 @@
 #include "GlobeApp.h"
 #include <set>
 #include <stdexcept>
+#include <cstring>
 
-// ---------------------------------------------------------------------------
-// Helper: pick a memory type that supports the requested property flags
-// (already declared in Globe_Helpers.cpp, but is used here by pickPhysicalDevice)
-// That function is actually in Globe_Helpers.cpp – no need to duplicate.
-// ---------------------------------------------------------------------------
+// Helper: check if a layer is available
+static bool checkValidationLayerSupport(const std::vector<const char*>& requestedLayers) {
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+    for (const char* layerName : requestedLayers) {
+        bool found = false;
+        for (const auto& layer : availableLayers) {
+            if (strcmp(layerName, layer.layerName) == 0) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) return false;
+    }
+    return true;
+}
 
 void GlobeApp::createInstance() {
+    // Request validation layers in debug mode (optional but recommended)
+    std::vector<const char*> validationLayers = {
+        "VK_LAYER_KHRONOS_validation"
+    };
+    bool enableValidation = checkValidationLayerSupport(validationLayers);
+    if (enableValidation) {
+        std::cout << "🔍 Validation layers enabled\n";
+    } else {
+        std::cout << "⚠️  Validation layers not available, running without them\n";
+    }
+
     VkApplicationInfo ai{};
     ai.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     ai.pApplicationName = "GlobeViewer";
@@ -20,11 +46,22 @@ void GlobeApp::createInstance() {
     const char** glfwExts = glfwGetRequiredInstanceExtensions(&glfwCnt);
     std::vector<const char*> exts(glfwExts, glfwExts + glfwCnt);
 
+    // Add debug utils extension if validation is enabled (optional, for better messages)
+    if (enableValidation) {
+        exts.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+
     VkInstanceCreateInfo ci{};
     ci.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     ci.pApplicationInfo = &ai;
     ci.enabledExtensionCount = exts.size();
     ci.ppEnabledExtensionNames = exts.data();
+    if (enableValidation) {
+        ci.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        ci.ppEnabledLayerNames = validationLayers.data();
+    } else {
+        ci.enabledLayerCount = 0;
+    }
     if (vkCreateInstance(&ci, nullptr, &instance) != VK_SUCCESS)
         throw std::runtime_error("failed to create instance!");
 }
