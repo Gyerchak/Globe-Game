@@ -1,0 +1,77 @@
+[
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/app/Globe.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/app/Globe.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/camera/Globe_Camera.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/camera/Globe_Camera.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/camera/Globe_Uniforms.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/camera/Globe_Uniforms.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/mesh/Globe_Mesh.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/mesh/Globe_Mesh.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/renderer/Globe_Offscreen.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/renderer/Globe_Offscreen.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/renderer/Globe_Pipeline.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/renderer/Globe_Pipeline.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/texture/Globe_Grid.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/texture/Globe_Grid.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/texture/Globe_Texture.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/texture/Globe_Texture.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/utils/Globe_FrameSync.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/utils/Globe_FrameSync.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/utils/Globe_Helpers.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/utils/Globe_Helpers.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/utils/Globe_Settings.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/utils/Globe_Settings.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/utils/Globe_cleanup.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/utils/Globe_cleanup.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/vulkan/Globe_SwapChain.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/vulkan/Globe_SwapChain.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/vulkan/Globe_VulkanSetup.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/vulkan/Globe_VulkanSetup.cpp"
+  },
+  {
+    "directory": "/run/media/hubertg/SONIC/Globe-Game",
+    "command": "g++ -std=c++20 -O3 -Iinclude -Isrc -I/usr/include/vulkan -I/usr/include/glm -c src/window/Globe_Window.cpp",
+    "file": "/run/media/hubertg/SONIC/Globe-Game/src/window/Globe_Window.cpp"
+  }
+]
