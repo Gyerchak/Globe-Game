@@ -26,6 +26,7 @@ void GlobeApp::initVulkan() {
     createGraphicsPipeline();            // uses offscreenExtent for viewport
     prepareSphere();
     loadTexture();
+    loadHeightmap();                     
     loadGrid();
     createUniformBuffers();
     createDescriptorSets();
