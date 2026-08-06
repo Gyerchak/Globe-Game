@@ -42,11 +42,6 @@ void GlobeApp::cleanup() {
     if (descriptorSetLayout) vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
     if (renderPass) vkDestroyRenderPass(device, renderPass, nullptr);
 
-    // Depth (full size, unused)
-    if (depthImageView) vkDestroyImageView(device, depthImageView, nullptr);
-    if (depthImage) vkDestroyImage(device, depthImage, nullptr);
-    if (depthImageMemory) vkFreeMemory(device, depthImageMemory, nullptr);
-
     for (auto& iv : swapChainImageViews) if (iv) vkDestroyImageView(device, iv, nullptr);
     if (swapChain) vkDestroySwapchainKHR(device, swapChain, nullptr);
     if (vertexBuffer) vkDestroyBuffer(device, vertexBuffer, nullptr);
