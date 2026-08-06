@@ -39,6 +39,7 @@ struct UniformBufferObject {
     glm::mat4 view;
     glm::mat4 proj;
     glm::vec4 cameraPos;
+    float displacementScale;   // 👈 added
 };
 
 struct PushConstants {
@@ -150,6 +151,13 @@ private:
     VkImageView textureImageView = VK_NULL_HANDLE;
     VkSampler textureSampler = VK_NULL_HANDLE;
     void loadTexture();
+
+    // Heightmap displacement texture 👈 new
+    VkImage heightmapImage = VK_NULL_HANDLE;
+    VkDeviceMemory heightmapMemory = VK_NULL_HANDLE;
+    VkImageView heightmapView = VK_NULL_HANDLE;
+    VkSampler heightmapSampler = VK_NULL_HANDLE;
+    void loadHeightmap();            // 👈 new
 
     // Grid overlay
     std::vector<uint8_t> gridData;
