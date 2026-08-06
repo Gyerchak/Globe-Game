@@ -151,7 +151,11 @@ void GlobeApp::createLogicalDevice() {
         qi.pQueuePriorities = &prio;
         qcis.push_back(qi);
     }
+    VkPhysicalDeviceFeatures supportedFeatures{};
+    vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
     VkPhysicalDeviceFeatures feats{};
+    // Enable samplerAnisotropy only if the device supports it
+    feats.samplerAnisotropy = supportedFeatures.samplerAnisotropy;
     VkDeviceCreateInfo dci{};
     dci.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     dci.queueCreateInfoCount = qcis.size();
