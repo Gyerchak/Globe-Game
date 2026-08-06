@@ -17,7 +17,6 @@ void GlobeApp::initVulkan() {
 
     createSwapChain();
     createImageViews();
-    createDepthResources();              // full size depth (not used)
     createRenderPass();                  // uses swapChainImageFormat
 
     createCommandPool();                 // <-- MUST be before any layout transitions
