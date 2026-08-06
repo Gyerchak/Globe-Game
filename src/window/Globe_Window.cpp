@@ -90,5 +90,5 @@ void GlobeApp::scrollCallback(GLFWwindow* w, double, double yoffset) {
     float sensitivity = 0.02f;
     float factor = 1.0f - (float)yoffset * sensitivity;
     app->targetDistance *= factor;
-    app->targetDistance = glm::clamp(app->targetDistance, 0.8f, 150.0f);
+    app->targetDistance = glm::clamp(app->targetDistance, 0.8f, 40.0f);
 }
