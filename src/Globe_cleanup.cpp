@@ -1,3 +1,5 @@
+#include "GlobeApp.h"
+
 void GlobeApp::cleanup() {
     saveGridToFile();
 
@@ -25,7 +27,7 @@ void GlobeApp::cleanup() {
     if (textureImage) vkDestroyImage(device, textureImage, nullptr);
     if (textureImageMemory) vkFreeMemory(device, textureImageMemory, nullptr);
 
-    // Heightmap – 👈 new
+    // Heightmap
     if (heightmapSampler) vkDestroySampler(device, heightmapSampler, nullptr);
     if (heightmapView) vkDestroyImageView(device, heightmapView, nullptr);
     if (heightmapImage) vkDestroyImage(device, heightmapImage, nullptr);
