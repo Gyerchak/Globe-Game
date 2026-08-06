@@ -46,16 +46,16 @@ void GlobeApp::updateCamera() {
     // Distance-dependent field-of-view to make zooming out reveal more of the globe
     // rather than simply shrinking it to a tiny circle.
     const float baseFovDeg = 40.0f;      // FOV at close range
-    const float maxFovDeg = 160.0f;     // allow a much wider FOV when zoomed out
-    const float fovStartDist = 1.0f;    // start opening the FOV earlier
-    const float fovEndDist = 6.0f;      // reach max FOV at a short distance
+    const float maxFovDeg = 175.0f;     // allow an even wider FOV when zoomed out
+    const float fovStartDist = 0.9f;    // start opening the FOV very early
+    const float fovEndDist = 4.0f;      // reach max FOV at a modest distance
     float t = 0.0f;
     if (camDistance > fovStartDist) {
-        // stronger, faster interpolation so zooming out reveals much more area
+        // faster opening curve so small distance changes expose much more area
         t = (camDistance - fovStartDist) / (fovEndDist - fovStartDist);
         t = glm::clamp(t, 0.0f, 1.0f);
-        // bias towards opening the FOV quickly
-        t = pow(t, 0.6f);
+        // ease out to emphasize opening early
+        t = glm::pow(t, 0.5f);
     }
     float fovDeg = glm::mix(baseFovDeg, maxFovDeg, t);
     glm::mat4 proj = glm::perspective(glm::radians(fovDeg), aspect, nearPlane, farPlane);
