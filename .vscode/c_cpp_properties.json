@@ -2,10 +2,11 @@
   "configurations": [
     {
       "name": "linux-gcc-x64",
-      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
       "includePath": [
         "${workspaceFolder}/**",
-        "${workspaceFolder}/src"
+        "${workspaceFolder}/src",
+        "/usr/include/vulkan",
+        "/usr/include/glm"
       ],
       "compilerPath": "/usr/bin/g++",
       "cStandard": "${default}",
