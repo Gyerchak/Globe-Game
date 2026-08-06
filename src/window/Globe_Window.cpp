@@ -87,7 +87,8 @@ void GlobeApp::cursorPosCallback(GLFWwindow* w, double xpos, double ypos) {
 
 void GlobeApp::scrollCallback(GLFWwindow* w, double, double yoffset) {
     auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
-    float amount = (float)yoffset * 8.0f;
+    float step = glm::clamp(app->camDistance * 0.003f, 0.05f, 3.0f);
+    float amount = (float)yoffset * step;
     app->targetDistance -= amount;
     app->targetDistance = glm::clamp(app->targetDistance, 0.8f, 1200.0f);
 }
