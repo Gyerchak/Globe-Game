@@ -17,12 +17,30 @@ void GlobeApp::updateCamera() {
 
     float speed = 0.4f * deltaTime;
     if (keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) speed *= 5.0f;
-    if (keys[GLFW_KEY_W]) camPitch += speed;
-    if (keys[GLFW_KEY_S]) camPitch -= speed;
-    if (keys[GLFW_KEY_A]) camYaw -= speed;
-    if (keys[GLFW_KEY_D]) camYaw += speed;
-    if (keys[GLFW_KEY_Q]) camRoll += speed;
-    if (keys[GLFW_KEY_E]) camRoll -= speed;
+    bool ctrlDown = keys[GLFW_KEY_LEFT_CONTROL] || keys[GLFW_KEY_RIGHT_CONTROL];
+
+    // When Ctrl is held, interpret WASD as camera-target panning (move the "head" in X/Y)
+    if (ctrlDown) {
+        glm::vec3 camPos = getCameraPos();
+        glm::vec3 forward = glm::normalize(camTarget - camPos);
+        glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+        glm::vec3 up = glm::normalize(glm::cross(right, forward));
+        float panSpeed = glm::clamp(camDistance * 0.0025f, 0.01f, 10.0f) * (shiftDown ? 5.0f : 1.0f);
+        if (keys[GLFW_KEY_W]) camTarget += up * panSpeed;
+        if (keys[GLFW_KEY_S]) camTarget -= up * panSpeed;
+        if (keys[GLFW_KEY_A]) camTarget -= right * panSpeed;
+        if (keys[GLFW_KEY_D]) camTarget += right * panSpeed;
+        // allow altitude changes with Q/E while panning
+        if (keys[GLFW_KEY_Q]) camTarget += forward * panSpeed * 0.5f;
+        if (keys[GLFW_KEY_E]) camTarget -= forward * panSpeed * 0.5f;
+    } else {
+        if (keys[GLFW_KEY_W]) camPitch += speed;
+        if (keys[GLFW_KEY_S]) camPitch -= speed;
+        if (keys[GLFW_KEY_A]) camYaw -= speed;
+        if (keys[GLFW_KEY_D]) camYaw += speed;
+        if (keys[GLFW_KEY_Q]) camRoll += speed;
+        if (keys[GLFW_KEY_E]) camRoll -= speed;
+    }
     if (keys[GLFW_KEY_Z]) { targetDistance -= speed * 1.5f; targetDistance = glm::clamp(targetDistance, 0.8f, 1200.0f); }
     if (keys[GLFW_KEY_X]) { targetDistance += speed * 1.5f; targetDistance = glm::clamp(targetDistance, 0.8f, 1200.0f); }
 
