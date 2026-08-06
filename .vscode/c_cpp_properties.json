@@ -3,11 +3,14 @@
     {
       "name": "linux-gcc-x64",
       "includePath": [
-        "${workspaceFolder}/**"
+        "${workspaceFolder}/**",
+        "${workspaceFolder}/src",
+        "/usr/include/vulkan",
+        "/usr/include/glm"
       ],
-      "compilerPath": "/usr/bin/gcc",
+      "compilerPath": "/usr/bin/g++",
       "cStandard": "${default}",
-      "cppStandard": "${default}",
+      "cppStandard": "c++20",
       "intelliSenseMode": "linux-gcc-x64",
       "compilerArgs": [
         ""
