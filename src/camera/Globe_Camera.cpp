@@ -42,7 +42,24 @@ void GlobeApp::updateCamera() {
     float aspect = (float)swapChainExtent.width / (float)swapChainExtent.height;
     float nearPlane = 0.01f;
     float farPlane = glm::max(5000.0f, camDistance * 50.0f);
-    glm::mat4 proj = glm::perspective(glm::radians(40.0f), aspect, nearPlane, farPlane);
+
+    // Distance-dependent field-of-view to make zooming out reveal more of the globe
+    // rather than simply shrinking it to a tiny circle.
+    const float baseFovDeg = 40.0f;      // FOV at close range
+    const float maxFovDeg = 110.0f;      // FOV at very far range
+    const float fovStartDist = 2.5f;     // distance where FOV begins to open
+    const float fovEndDist = 800.0f;     // distance where FOV reaches max
+    float t = 0.0f;
+    if (camDistance > fovStartDist) {
+        // interpolate on a log scale for smoother response across orders of magnitude
+        float l0 = glm::log(fovStartDist);
+        float l1 = glm::log(fovEndDist);
+        float lc = glm::log(glm::max(camDistance, fovStartDist));
+        t = (lc - l0) / (l1 - l0);
+        t = glm::clamp(t, 0.0f, 1.0f);
+    }
+    float fovDeg = glm::mix(baseFovDeg, maxFovDeg, t);
+    glm::mat4 proj = glm::perspective(glm::radians(fovDeg), aspect, nearPlane, farPlane);
     proj[1][1] *= -1;
     proj[2][2] = proj[2][2] * 0.5f + proj[3][2] * 0.5f;
     proj[2][3] = proj[2][3] * 0.5f + proj[3][3] * 0.5f;
