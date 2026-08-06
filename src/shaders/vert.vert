@@ -15,8 +15,9 @@ layout(binding = 3) uniform sampler2D heightmapSampler;
 layout(location = 0) out vec2 fragTexCoord;
 
 void main() {
-    // Sample the heightmap at the texture coordinate (assumed equirectangular)
-    float height = texture(heightmapSampler, inTexCoord).r;
+    // Use the same UV orientation for heightmap samples as the globe texture.
+    vec2 sampleUV = vec2(1.0 - inTexCoord.x, inTexCoord.y);
+    float height = texture(heightmapSampler, sampleUV).r - 0.5;
 
     // Displace along the unit-sphere normal (the vertex position direction for a unit sphere)
     vec3 displacedPos = inPos + normalize(inPos) * height * ubo.displacementScale;
