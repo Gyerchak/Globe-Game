@@ -126,7 +126,17 @@ void GlobeApp::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex) {
                    offscreenColorImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                    swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                    1, &blit,
-                   VK_FILTER_LINEAR);   // smooth scaling
+                   VK_FILTER_LINEAR);
+
+    // ----- Transition offscreen image back to color attachment layout for next frame -----
+    offscreenBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    offscreenBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    offscreenBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    offscreenBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    vkCmdPipelineBarrier(cmd,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &offscreenBarrier);
 
     // ----- 5. Transition swapchain image to present layout -----
     swapchainBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -143,8 +153,19 @@ void GlobeApp::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex) {
 
 void GlobeApp::drawFrame() {
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX,
+                                            imageAvailableSemaphores[currentFrame],
+                                            VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        recreateSwapChain();
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
     vkResetCommandBuffer(commandBuffers[currentFrame], 0);
     recordCommandBuffer(commandBuffers[currentFrame], imageIndex);
@@ -159,7 +180,10 @@ void GlobeApp::drawFrame() {
     submit.pCommandBuffers = &commandBuffers[currentFrame];
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
-    vkQueueSubmit(graphicsQueue, 1, &submit, inFlightFences[currentFrame]);
+
+    if (vkQueueSubmit(graphicsQueue, 1, &submit, inFlightFences[currentFrame]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to submit draw command buffer!");
+    }
 
     VkPresentInfoKHR present{};
     present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -168,6 +192,15 @@ void GlobeApp::drawFrame() {
     present.swapchainCount = 1;
     present.pSwapchains = &swapChain;
     present.pImageIndices = &imageIndex;
-    vkQueuePresentKHR(presentQueue, &present);
+
+    result = vkQueuePresentKHR(presentQueue, &present);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+        framebufferResized = false;
+        recreateSwapChain();
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
+
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
