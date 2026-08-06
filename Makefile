@@ -4,7 +4,7 @@ LDFLAGS  := -lgdal -lvulkan -lglfw
 
 TARGET   := Globe
 SRCDIR   := src
-OBJDIR   := obj
+OBJDIR   := .obj
 
 # Collect all .cpp sources recursively
 SRCS     := $(shell find $(SRCDIR) -name '*.cpp')
@@ -12,7 +12,7 @@ OBJS     := $(patsubst $(SRCDIR)/%.cpp,$(OBJDIR)/%.o,$(SRCS))
 
 # Shader files
 SHADER_SRCDIR := src/shaders
-SHADER_OUTDIR := shaders
+SHADER_OUTDIR := .shaders
 VERT_SRC := $(wildcard $(SHADER_SRCDIR)/*.vert)
 FRAG_SRC := $(wildcard $(SHADER_SRCDIR)/*.frag)
 SHADER_OUT := $(patsubst $(SHADER_SRCDIR)/%.vert,$(SHADER_OUTDIR)/%.spv,$(VERT_SRC)) \
@@ -42,6 +42,6 @@ $(SHADER_OUTDIR)/%.spv: $(SHADER_SRCDIR)/%.frag
 
 .PHONY: clean shaders
 clean:
-	rm -rf $(OBJDIR) $(TARGET) shaders/*.spv
+	rm -rf $(OBJDIR) $(TARGET) .shaders/*.spv
 
 .DEFAULT_GOAL := all

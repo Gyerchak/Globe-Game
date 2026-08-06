@@ -6,7 +6,7 @@ void GlobeApp::loadGrid() {
 
     gridData.resize(gridSize, 0);
 
-    const std::string gridFile = "bin/32kbitmap.bin";
+    const std::string gridFile = ".bin/32kbitmap.bin";
     std::ifstream fin(gridFile, std::ios::binary);
     if (fin) {
         fin.read((char*)gridData.data(), gridSize);
@@ -77,7 +77,7 @@ void GlobeApp::loadGrid() {
 }
 
 void GlobeApp::saveGridToFile() {
-    const std::string gridFile = "bin/32kbitmap.bin";
+    const std::string gridFile = ".bin/32kbitmap.bin";
     std::ofstream fout(gridFile, std::ios::binary | std::ios::trunc);
     if (fout) {
         fout.write((const char*)gridData.data(), gridData.size());

@@ -85,8 +85,8 @@ void GlobeApp::createDescriptorSetLayout() {
 }
 
 void GlobeApp::createGraphicsPipeline() {
-    auto vertCode = readFile("shaders/vert.spv");
-    auto fragCode = readFile("shaders/frag.spv");
+    auto vertCode = readFile(".shaders/vert.spv");
+    auto fragCode = readFile(".shaders/frag.spv");
     VkShaderModule vertMod = createShaderModule(vertCode);
     VkShaderModule fragMod = createShaderModule(fragCode);
     VkPipelineShaderStageCreateInfo vertStage{}, fragStage{};
