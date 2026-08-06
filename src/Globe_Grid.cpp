@@ -27,6 +27,15 @@ void GlobeApp::loadGrid() {
         }
     }
 
+    // Check GPU limits before creating the image
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(physicalDevice, &props);
+    if (gridW > props.limits.maxImageDimension2D || gridH > props.limits.maxImageDimension2D) {
+        std::cerr << "❌ GPU does not support " << gridW << "x" << gridH
+                  << " images! Max dimension is " << props.limits.maxImageDimension2D << "\n";
+        throw std::runtime_error("Grid texture too large for GPU");
+    }
+
     createImage((uint32_t)gridW, (uint32_t)gridH, VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gridImage, gridImageMemory);
