@@ -87,8 +87,7 @@ void GlobeApp::cursorPosCallback(GLFWwindow* w, double xpos, double ypos) {
 
 void GlobeApp::scrollCallback(GLFWwindow* w, double, double yoffset) {
     auto* app = (GlobeApp*)glfwGetWindowUserPointer(w);
-    float sensitivity = 0.02f;
-    float factor = 1.0f - (float)yoffset * sensitivity;
-    app->targetDistance *= factor;
-    app->targetDistance = glm::clamp(app->targetDistance, 0.8f, 40.0f);
+    float amount = (float)yoffset * 8.0f;
+    app->targetDistance -= amount;
+    app->targetDistance = glm::clamp(app->targetDistance, 0.8f, 1200.0f);
 }

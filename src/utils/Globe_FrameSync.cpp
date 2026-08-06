@@ -49,7 +49,7 @@ void GlobeApp::recordCommandBuffer(VkCommandBuffer cmd, uint32_t imageIndex) {
     rpi.renderPass = renderPass;
     rpi.framebuffer = offscreenFramebuffer;
     rpi.renderArea = {{0, 0}, offscreenExtent};
-    VkClearValue colorClear{0.0f, 0.0f, 0.0f, 1.0f};
+    VkClearValue colorClear{0.02f, 0.02f, 0.06f, 1.0f};
     VkClearValue depthClear{1.0f, 0};
     std::array<VkClearValue, 2> clears = {colorClear, depthClear};
     rpi.clearValueCount = 2;

@@ -13,7 +13,7 @@ glm::vec3 GlobeApp::getCameraPos() {
 
 void GlobeApp::updateCamera() {
     camDistance += (targetDistance - camDistance) * zoomSmoothness;
-    camDistance = glm::clamp(camDistance, 0.8f, 40.0f);
+    camDistance = glm::clamp(camDistance, 0.8f, 1200.0f);
 
     float speed = 0.4f * deltaTime;
     if (keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) speed *= 5.0f;
@@ -23,8 +23,8 @@ void GlobeApp::updateCamera() {
     if (keys[GLFW_KEY_D]) camYaw += speed;
     if (keys[GLFW_KEY_Q]) camRoll += speed;
     if (keys[GLFW_KEY_E]) camRoll -= speed;
-    if (keys[GLFW_KEY_Z]) { targetDistance *= (1.0f - speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.8f, 40.0f); }
-    if (keys[GLFW_KEY_X]) { targetDistance *= (1.0f + speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.8f, 40.0f); }
+    if (keys[GLFW_KEY_Z]) { targetDistance -= speed * 1.5f; targetDistance = glm::clamp(targetDistance, 0.8f, 1200.0f); }
+    if (keys[GLFW_KEY_X]) { targetDistance += speed * 1.5f; targetDistance = glm::clamp(targetDistance, 0.8f, 1200.0f); }
 
     float cp = glm::cos(camPitch), sp = glm::sin(camPitch);
     float cy = glm::cos(camYaw), sy = glm::sin(camYaw);
@@ -40,9 +40,9 @@ void GlobeApp::updateCamera() {
     view = glm::rotate(view, camRoll, forward);
 
     float aspect = (float)swapChainExtent.width / (float)swapChainExtent.height;
-    float nearPlane = glm::max(0.001f, camDistance * 0.001f);
-    float farPlane = glm::max(5000.0f, camDistance * 20.0f);
-    glm::mat4 proj = glm::perspective(glm::radians(60.0f), aspect, nearPlane, farPlane);
+    float nearPlane = 0.01f;
+    float farPlane = glm::max(5000.0f, camDistance * 50.0f);
+    glm::mat4 proj = glm::perspective(glm::radians(40.0f), aspect, nearPlane, farPlane);
     proj[1][1] *= -1;
     proj[2][2] = proj[2][2] * 0.5f + proj[3][2] * 0.5f;
     proj[2][3] = proj[2][3] * 0.5f + proj[3][3] * 0.5f;
