@@ -14,3 +14,7 @@ files/map
 #extensions
 *.tif
 *.bin
+#tool
+ProjectTXT
+ProjectTXT.txt
+exclude.txt
