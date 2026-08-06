@@ -13,7 +13,7 @@ glm::vec3 GlobeApp::getCameraPos() {
 
 void GlobeApp::updateCamera() {
     camDistance += (targetDistance - camDistance) * zoomSmoothness;
-    camDistance = glm::clamp(camDistance, 0.8f, 500.0f);
+    camDistance = glm::clamp(camDistance, 0.8f, 150.0f);
 
     float speed = 0.4f * deltaTime;
     if (keys[GLFW_KEY_LEFT_SHIFT] || keys[GLFW_KEY_RIGHT_SHIFT]) speed *= 5.0f;
@@ -23,8 +23,8 @@ void GlobeApp::updateCamera() {
     if (keys[GLFW_KEY_D]) camYaw += speed;
     if (keys[GLFW_KEY_Q]) camRoll += speed;
     if (keys[GLFW_KEY_E]) camRoll -= speed;
-    if (keys[GLFW_KEY_Z]) { targetDistance *= (1.0f - speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.8f, 500.0f); }
-    if (keys[GLFW_KEY_X]) { targetDistance *= (1.0f + speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.8f, 500.0f); }
+    if (keys[GLFW_KEY_Z]) { targetDistance *= (1.0f - speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.8f, 150.0f); }
+    if (keys[GLFW_KEY_X]) { targetDistance *= (1.0f + speed * 0.5f); targetDistance = glm::clamp(targetDistance, 0.8f, 150.0f); }
 
     float cp = glm::cos(camPitch), sp = glm::sin(camPitch);
     float cy = glm::cos(camYaw), sy = glm::sin(camYaw);
