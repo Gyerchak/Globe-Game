@@ -21,7 +21,7 @@
 #include <chrono>
 #include <algorithm>
 #include <cmath>
-#include <thread>                     // for std::this_thread::sleep_for
+#include <thread>
 
 constexpr int WIDTH = 1280;
 constexpr int HEIGHT = 720;
@@ -107,12 +107,6 @@ private:
     void createImageViews();
     void recreateSwapChain();
     bool framebufferResized = false;
-
-    // Depth resources (full size, kept for safety)
-    VkImage depthImage = VK_NULL_HANDLE;
-    VkDeviceMemory depthImageMemory = VK_NULL_HANDLE;
-    VkImageView depthImageView = VK_NULL_HANDLE;
-    void createDepthResources();
 
     // Off‑screen fixed‑resolution rendering
     VkExtent2D offscreenExtent{};
