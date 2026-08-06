@@ -26,6 +26,7 @@ void GlobeApp::initVulkan() {
     createGraphicsPipeline();
     prepareSphere();
     loadTexture();
+    loadHeightmap();               // ← new
     loadGrid();
     createUniformBuffers();
     createDescriptorSets();

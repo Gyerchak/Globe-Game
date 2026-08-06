@@ -39,6 +39,7 @@ struct UniformBufferObject {
     glm::mat4 view;
     glm::mat4 proj;
     glm::vec4 cameraPos;
+    float displacementScale;           // ← heightmap strength
 };
 
 struct PushConstants {
@@ -122,7 +123,7 @@ private:
     void destroyOffscreenResources();
 
     // FPS control
-    float targetFPS = 30.0f;          // 0 = uncapped
+    float targetFPS = 30.0f;
     bool vsyncEnabled = false;
 
     // Pipeline
@@ -149,6 +150,13 @@ private:
     VkImageView textureImageView = VK_NULL_HANDLE;
     VkSampler textureSampler = VK_NULL_HANDLE;
     void loadTexture();
+
+    // Heightmap displacement
+    VkImage heightmapImage = VK_NULL_HANDLE;
+    VkDeviceMemory heightmapMemory = VK_NULL_HANDLE;
+    VkImageView heightmapView = VK_NULL_HANDLE;
+    VkSampler heightmapSampler = VK_NULL_HANDLE;
+    void loadHeightmap();
 
     // Grid overlay
     std::vector<uint8_t> gridData;

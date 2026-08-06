@@ -58,7 +58,7 @@ void GlobeApp::createRenderPass() {
 }
 
 void GlobeApp::createDescriptorSetLayout() {
-    std::array<VkDescriptorSetLayoutBinding, 3> bindings{};
+    std::array<VkDescriptorSetLayoutBinding, 4> bindings{};
     bindings[0].binding = 0;
     bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     bindings[0].descriptorCount = 1;
@@ -71,6 +71,10 @@ void GlobeApp::createDescriptorSetLayout() {
     bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     bindings[2].descriptorCount = 1;
     bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[3].binding = 3;
+    bindings[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[3].descriptorCount = 1;
+    bindings[3].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;   // heightmap used in vertex shader
 
     VkDescriptorSetLayoutCreateInfo li{};
     li.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

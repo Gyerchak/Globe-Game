@@ -15,7 +15,7 @@ void GlobeApp::createUniformBuffers() {
 
 void GlobeApp::createDescriptorSets() {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {
-        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT * 2},
+        VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT * 3},  // globe + grid + heightmap
         VkDescriptorPoolSize{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT}
     };
     VkDescriptorPoolCreateInfo pi{};
@@ -52,7 +52,12 @@ void GlobeApp::createDescriptorSets() {
         gridImageInfo.imageView = gridImageView;
         gridImageInfo.sampler = gridSampler;
 
-        std::array<VkWriteDescriptorSet, 3> writes{};
+        VkDescriptorImageInfo heightmapInfo{};
+        heightmapInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        heightmapInfo.imageView = heightmapView;
+        heightmapInfo.sampler = heightmapSampler;
+
+        std::array<VkWriteDescriptorSet, 4> writes{};
         writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[0].dstSet = descriptorSets[f];
         writes[0].dstBinding = 0;
@@ -73,6 +78,13 @@ void GlobeApp::createDescriptorSets() {
         writes[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         writes[2].descriptorCount = 1;
         writes[2].pImageInfo = &gridImageInfo;
+
+        writes[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[3].dstSet = descriptorSets[f];
+        writes[3].dstBinding = 3;
+        writes[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writes[3].descriptorCount = 1;
+        writes[3].pImageInfo = &heightmapInfo;
 
         vkUpdateDescriptorSets(device, writes.size(), writes.data(), 0, nullptr);
     }
