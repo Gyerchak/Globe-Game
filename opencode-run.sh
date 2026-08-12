@@ -24,8 +24,11 @@ if [ "${1:-launch}" = "launch" ]; then
   if [ -n "${SPAWNED_TERMINAL:-}" ]; then
     spawn_terminal "$0" run
   else
-    exec "$0" run
+    "$0" run &
   fi
+  # Auto-open the opencode sidebar in the new window shortly after it starts.
+  scroll_target="$BOX_DIR/openbox-keys.py"
+  [ -f "$scroll_target" ] && sleep 1 && python3 "$scroll_target" --delay 2.5 >/dev/null 2>&1 &
   exit 0
 fi
 
