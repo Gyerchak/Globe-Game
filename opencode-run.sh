@@ -4,23 +4,22 @@
 
 set -euo pipefail
 
-# The box is the parent of the project-runs/ folder (or the folder holding this
-# run file's box). Resolve the box directory robustly:
-if [ -f "$(dirname "$0")/../box-env.sh" ]; then
-  BOX="$(cd "$(dirname "$0")/.." && pwd)"
-else
-  BOX="$(cd "$(dirname "$0")" && pwd)"
-fi
-CONTAINER="$(dirname "$BOX")"
+# Locate and source box-env.sh (walks up to find the OpenCodeBox folder).
+_d="$(cd "$(dirname "$0")" && pwd)"
+while [ "$_d" != "/" ]; do
+  if [ -f "$_d/box-env.sh" ]; then source "$_d/box-env.sh"; break; fi
+  if [ -f "$_d/OpenCodeBox/box-env.sh" ]; then source "$_d/OpenCodeBox/box-env.sh"; break; fi
+  _d="$(dirname "$_d")"
+done
+
 PROJ="Globe-Game"
-PROJ_DATA="$BOX/project-data"
+PROJ_DATA="$BOX_DIR/project-data"
 DATA="$PROJ_DATA/Globe-Game/.opencode-data"
 SESSIONS_DIR="$PROJ_DATA/Globe-Game/sessions"
 
 export OPENCODE_CONFIG="$PROJ_DATA/Globe-Game/opencode.json"
 
 if [ "${1:-launch}" = "launch" ]; then
-  source "$BOX/box-env.sh"
   if [ -z "${SPAWNED_TERMINAL:-}" ]; then detect_terminal || true; fi
   if [ -n "${SPAWNED_TERMINAL:-}" ]; then
     spawn_terminal "$0" run
@@ -31,7 +30,7 @@ if [ "${1:-launch}" = "launch" ]; then
 fi
 
 # "run" mode: inside the terminal window
-cd "$CONTAINER/$PROJ"
+cd "$CONTAINER_DIR/$PROJ"
 mkdir -p "$DATA" "$SESSIONS_DIR"
 if [ ! -e "$DATA/opencode/auth.json" ]; then
   mkdir -p "$DATA/opencode"
