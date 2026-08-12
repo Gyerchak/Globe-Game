@@ -1,22 +1,43 @@
 #!/usr/bin/env bash
+# Open "Globe-Game" with its own dedicated sessions in a NEW TERMINAL WINDOW.
+# Directory-agnostic: paths resolved from this file's location.
+
 set -euo pipefail
 
-# Open "Globe-Game" with its own dedicated sessions.
+# The box is the parent of the project-runs/ folder (or the folder holding this
+# run file's box). Resolve the box directory robustly:
+if [ -f "$(dirname "$0")/../box-env.sh" ]; then
+  BOX="$(cd "$(dirname "$0")/.." && pwd)"
+else
+  BOX="$(cd "$(dirname "$0")" && pwd)"
+fi
+CONTAINER="$(dirname "$BOX")"
 PROJ="Globe-Game"
-DRIVE="/run/media/hubertg/SONIC"
-DATA="/run/media/hubertg/SONIC/OpenCodeBox/project-data/Globe-Game/.opencode-data"
-SESSIONS_DIR="/run/media/hubertg/SONIC/OpenCodeBox/project-data/Globe-Game/sessions"
+PROJ_DATA="$BOX/project-data"
+DATA="$PROJ_DATA/Globe-Game/.opencode-data"
+SESSIONS_DIR="$PROJ_DATA/Globe-Game/sessions"
 
-cd "$DRIVE/$PROJ"
+export OPENCODE_CONFIG="$PROJ_DATA/Globe-Game/opencode.json"
+
+if [ "${1:-launch}" = "launch" ]; then
+  source "$BOX/box-env.sh"
+  if [ -z "${SPAWNED_TERMINAL:-}" ]; then detect_terminal || true; fi
+  if [ -n "${SPAWNED_TERMINAL:-}" ]; then
+    spawn_terminal "$0" run
+  else
+    exec "$0" run
+  fi
+  exit 0
+fi
+
+# "run" mode: inside the terminal window
+cd "$CONTAINER/$PROJ"
 mkdir -p "$DATA" "$SESSIONS_DIR"
-
 if [ ! -e "$DATA/opencode/auth.json" ]; then
   mkdir -p "$DATA/opencode"
   ln -sf "$HOME/.local/share/opencode/auth.json" "$DATA/opencode/auth.json"
 fi
-
 export XDG_DATA_HOME="$DATA"
-export OPENCODE_CONFIG="/run/media/hubertg/SONIC/OpenCodeBox/project-data/Globe-Game/opencode.json"
 
 # On exit, export this project's sessions into its visible sessions/ folder.
 cleanup() {
