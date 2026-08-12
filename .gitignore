@@ -21,3 +21,7 @@ exclude.txt
 # OpenCodeBox session data (never commit)
 .opencode-data/
 project-data/
+
+# OpenCodeBox shared skills/commands (symlinks; never commit)
+.opencode/skills
+.opencode/command
