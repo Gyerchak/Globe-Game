@@ -23,9 +23,9 @@ export OPENCODE_CONFIG="$PROJ_DATA/Globe-Game/opencode.json"
 if [ "${1:-launch}" = "launch" ]; then
   if [ -z "${SPAWNED_TERMINAL:-}" ]; then detect_terminal || true; fi
   if [ -n "${SPAWNED_TERMINAL:-}" ]; then
-    spawn_terminal "$0" run
+    spawn_terminal "$0" run "${2:-}"
   else
-    "$0" run &
+    "$0" run "${2:-}" &
   fi
   # Auto-open the opencode sidebar in the new window shortly after it starts.
   scroll_target="$BOX_DIR/openbox-keys.py"
@@ -41,6 +41,7 @@ if [ ! -e "$DATA/opencode/auth.json" ]; then
   ln -sf "$HOME/.local/share/opencode/auth.json" "$DATA/opencode/auth.json"
 fi
 export XDG_DATA_HOME="$DATA"
+export OPENCODE_DISABLE_AUTOCOMPACT=1
 
 # On exit, export this project's sessions into its visible sessions/ folder.
 cleanup() {
@@ -54,4 +55,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
-opencode --auto
+PROMPT_ARGS=()
+if [ "${2:-}" = "continue" ]; then
+  PROMPT_ARGS=(--prompt "Continue the work. Read ${HANDOFFS_DIR}/LATEST.md and follow its 'Next steps' in order. Do not re-ask settled questions.")
+fi
+
+opencode --auto "${PROMPT_ARGS[@]}" &
+echo $! > "$DATA/opencode.pid"
+
+nohup bash "$BOX_DIR/auto-handoff.sh" --watch --name "Globe-Game" --data-dir "$DATA" --handoffs "$HANDOFFS_DIR" --pidfile "$DATA/opencode.pid" --workdir "$CONTAINER_DIR/$PROJ" --restart-cmd "$0 launch continue" >/dev/null 2>&1 &
+
+wait
