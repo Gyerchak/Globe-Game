@@ -17,19 +17,30 @@ PROJ_DATA="$BOX_DIR/project-data"
 DATA="$PROJ_DATA/Globe-Game/.opencode-data"
 SESSIONS_DIR="$PROJ_DATA/Globe-Game/sessions"
 HANDOFFS_DIR="$PROJ_DATA/Globe-Game/handoffs"
+LOCKFILE="/tmp/opencode-Globe-Game.lock"
 
 export OPENCODE_CONFIG="$PROJ_DATA/Globe-Game/opencode.json"
 
 if [ "${1:-launch}" = "launch" ]; then
+  # Single-instance guard: refuse a second terminal for this project unless
+  # this is the auto-handoff continuation ("continue"). Only one agent/project.
+  if [ -f "$LOCKFILE" ]; then
+    LOCK_PID=
+    if [ -n "$LOCK_PID" ] && kill -0 "$LOCK_PID" 2>/dev/null && [ "${2:-}" != "continue" ]; then
+      echo "Globe-Game is already running (PID $LOCK_PID)."
+      echo "Only one agent per project -- use the existing terminal, or close it first."
+      exit 0
+    fi
+  fi
   if [ -z "${SPAWNED_TERMINAL:-}" ]; then detect_terminal || true; fi
   if [ -n "${SPAWNED_TERMINAL:-}" ]; then
     spawn_terminal "$0" run "${2:-}"
   else
     "$0" run "${2:-}" &
   fi
-  # Auto-open the opencode sidebar in the new window shortly after it starts.
+  # Auto-open the opencode sidebar once opencode is up and the window focused.
   scroll_target="$BOX_DIR/openbox-keys.py"
-  [ -f "$scroll_target" ] && sleep 1 && python3 "$scroll_target" --delay 2.5 >/dev/null 2>&1 &
+  [ -f "$scroll_target" ] && sleep 1 && python3 "$scroll_target" --delay 2.5     --pidfile "$DATA/opencode.pid" --retries 10 >/dev/null 2>&1 &
   exit 0
 fi
 
@@ -43,8 +54,20 @@ fi
 export XDG_DATA_HOME="$DATA"
 export OPENCODE_DISABLE_AUTOCOMPACT=1
 
+# Acquire this project's single-instance lock (replacing the previous holder,
+# which only happens legitimately on the auto-handoff continuation restart).
+echo $$ > "$LOCKFILE"
+
+# Remove the lock only if we still own it. The auto-handoff continuation can
+# start a fresh terminal whose run mode re-claims this file before this old
+# process exits; deleting it then would un-lock the new instance.
+release_lock() {
+  [ "$(cat "$LOCKFILE" 2>/dev/null || true)" = "$$" ] && rm -f "$LOCKFILE"
+}
+
 # On exit, export this project's sessions into its visible sessions/ folder.
 cleanup() {
+  release_lock
   mapfile -t IDs < <(opencode session list 2>/dev/null | grep -E '^ses_[A-Za-z0-9]+' | awk '{print $1}')
   if [ "${#IDs[@]}" -gt 0 ]; then
     rm -f "$SESSIONS_DIR"/*.json
