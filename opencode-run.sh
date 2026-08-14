@@ -60,7 +60,11 @@ if [ "${2:-}" = "continue" ]; then
   PROMPT_ARGS=(--prompt "Continue the work. Read ${HANDOFFS_DIR}/LATEST.md and follow its 'Next steps' in order. Do not re-ask settled questions.")
 fi
 
-opencode --auto "${PROMPT_ARGS[@]}" &
+if [ -r /dev/tty ]; then
+  opencode --auto "${PROMPT_ARGS[@]}" </dev/tty &
+else
+  opencode --auto "${PROMPT_ARGS[@]}" &
+fi
 echo $! > "$DATA/opencode.pid"
 
 nohup bash "$BOX_DIR/auto-handoff.sh" --watch --name "Globe-Game" --data-dir "$DATA" --handoffs "$HANDOFFS_DIR" --pidfile "$DATA/opencode.pid" --workdir "$CONTAINER_DIR/$PROJ" --restart-cmd "$0 launch continue" >/dev/null 2>&1 &
