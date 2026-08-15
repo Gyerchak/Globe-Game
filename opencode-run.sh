@@ -105,4 +105,12 @@ if [ -f "$CONTAINER_DIR/nonstop/src/nonstop-watch.sh" ]; then
     --typekeys "$CONTAINER_DIR/nonstop/src/typekeys.py" >/dev/null 2>&1 &
 fi
 
+# Autocommit addon: auto-commit stable changes (sibling project, if present).
+if [ -f "$CONTAINER_DIR/autocommit/src/autocommit-watch.sh" ]; then
+  nohup bash "$CONTAINER_DIR/autocommit/src/autocommit-watch.sh" \
+    --workdir "$CONTAINER_DIR/$PROJ" \
+    --pidfile "$DATA/opencode.pid" \
+    --git "$BOX_DIR/plugins/git/git.sh">/dev/null 2>&1 &
+fi
+
 wait
