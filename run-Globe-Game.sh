@@ -8,13 +8,13 @@ set -euo pipefail
 _d="$(cd "$(dirname "$0")" && pwd)"
 [ -f "/run/media/hubertg/SONIC/OpenCodeBox/AGENTS.md" ] || BOX="/run/media/hubertg/SONIC"
 while [ "$_d" != "/" ]; do
-  if [ -f "$_d/script/box-env.sh" ] && [ -f "$_d/AGENTS.md" ]; then source "$_d/script/box-env.sh"; break; fi
-  if [ -f "$_d/OpenCodeBox/script/box-env.sh" ]; then source "$_d/OpenCodeBox/script/box-env.sh"; break; fi
+  if [ -f "$_d/scripts/box-env.sh" ] && [ -f "$_d/AGENTS.md" ]; then source "$_d/scripts/box-env.sh"; break; fi
+  if [ -f "$_d/OpenCodeBox/scripts/box-env.sh" ]; then source "$_d/OpenCodeBox/scripts/box-env.sh"; break; fi
   _d="$(dirname "$_d")"
 done
 
 PROJ="Globe-Game"
-PROJ_DATA="$BOX_DIR/project-data"
+PROJ_DATA="$BOX_DIR/data/projects-data"
 PROJECTS_DIR="$BOX_DIR/projects"
 DATA="$PROJ_DATA/Globe-Game/.opencode-data"
 SESSIONS_DIR="$PROJ_DATA/Globe-Game/sessions"
@@ -57,8 +57,8 @@ export XDG_DATA_HOME="$DATA"
 export OPENCODE_DISABLE_AUTOCOMPACT=1
 
 # Token-price note at the start of every chat (peak vs off-peak DeepSeek hours).
-if [ -f "$BOX_DIR/script/tokenprice.sh" ]; then
-  bash "$BOX_DIR/script/tokenprice.sh" --notify 2>/dev/null || true
+if [ -f "$BOX_DIR/scripts/tokenprice.sh" ]; then
+  bash "$BOX_DIR/scripts/tokenprice.sh" --notify 2>/dev/null || true
 fi
 
 # Acquire this project's single-instance lock (replacing the previous holder,
@@ -99,7 +99,7 @@ else
 fi
 echo $! > "$DATA/opencode.pid"
 
-nohup bash "$BOX_DIR/script/auto-handoff.sh" --watch --name "Globe-Game" --data-dir "$DATA" --handoffs "$HANDOFFS_DIR" --pidfile "$DATA/opencode.pid" --workdir "$PROJECTS_DIR/$PROJ" --restart-cmd "$0 launch continue" >/dev/null 2>&1 &
+nohup bash "$BOX_DIR/scripts/auto-handoff.sh" --watch --name "Globe-Game" --data-dir "$DATA" --handoffs "$HANDOFFS_DIR" --pidfile "$DATA/opencode.pid" --workdir "$PROJECTS_DIR/$PROJ" --restart-cmd "$0 launch continue" >/dev/null 2>&1 &
 
 # Nonstop addon: auto-resume after an LLM timeout (sibling project, if present).
 if [ -f "$PROJECTS_DIR/nonstop/src/nonstop-watch.sh" ]; then
