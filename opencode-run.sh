@@ -54,6 +54,11 @@ fi
 export XDG_DATA_HOME="$DATA"
 export OPENCODE_DISABLE_AUTOCOMPACT=1
 
+# Token-price note at the start of every chat (peak vs off-peak DeepSeek hours).
+if [ -f "$BOX_DIR/tokenprice.sh" ]; then
+  bash "$BOX_DIR/tokenprice.sh" --notify 2>/dev/null || true
+fi
+
 # Acquire this project's single-instance lock (replacing the previous holder,
 # which only happens legitimately on the auto-handoff continuation restart).
 echo $$ > "$LOCKFILE"
@@ -91,5 +96,13 @@ fi
 echo $! > "$DATA/opencode.pid"
 
 nohup bash "$BOX_DIR/auto-handoff.sh" --watch --name "Globe-Game" --data-dir "$DATA" --handoffs "$HANDOFFS_DIR" --pidfile "$DATA/opencode.pid" --workdir "$CONTAINER_DIR/$PROJ" --restart-cmd "$0 launch continue" >/dev/null 2>&1 &
+
+# Nonstop addon: auto-resume after an LLM timeout (sibling project, if present).
+if [ -f "$CONTAINER_DIR/nonstop/src/nonstop-watch.sh" ]; then
+  nohup bash "$CONTAINER_DIR/nonstop/src/nonstop-watch.sh" \
+    --log "$DATA/opencode/log/opencode.log" \
+    --pidfile "$DATA/opencode.pid" \
+    --typekeys "$CONTAINER_DIR/nonstop/src/typekeys.py" >/dev/null 2>&1 &
+fi
 
 wait
