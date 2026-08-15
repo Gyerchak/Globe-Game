@@ -6,14 +6,16 @@ set -euo pipefail
 
 # Locate and source box-env.sh (walks up to find the OpenCodeBox folder).
 _d="$(cd "$(dirname "$0")" && pwd)"
+[ -f "/run/media/hubertg/SONIC/OpenCodeBox/AGENTS.md" ] || BOX="/run/media/hubertg/SONIC"
 while [ "$_d" != "/" ]; do
-  if [ -f "$_d/box-env.sh" ]; then source "$_d/box-env.sh"; break; fi
-  if [ -f "$_d/OpenCodeBox/box-env.sh" ]; then source "$_d/OpenCodeBox/box-env.sh"; break; fi
+  if [ -f "$_d/script/box-env.sh" ] && [ -f "$_d/AGENTS.md" ]; then source "$_d/script/box-env.sh"; break; fi
+  if [ -f "$_d/OpenCodeBox/script/box-env.sh" ]; then source "$_d/OpenCodeBox/script/box-env.sh"; break; fi
   _d="$(dirname "$_d")"
 done
 
 PROJ="Globe-Game"
 PROJ_DATA="$BOX_DIR/project-data"
+PROJECTS_DIR="$BOX_DIR/projects"
 DATA="$PROJ_DATA/Globe-Game/.opencode-data"
 SESSIONS_DIR="$PROJ_DATA/Globe-Game/sessions"
 HANDOFFS_DIR="$PROJ_DATA/Globe-Game/handoffs"
@@ -39,13 +41,13 @@ if [ "${1:-launch}" = "launch" ]; then
     "$0" run "${2:-}" &
   fi
   # Auto-open the opencode sidebar once opencode is up and the window focused.
-  scroll_target="$BOX_DIR/openbox-keys.py"
-  [ -f "$scroll_target" ] && sleep 1 && python3 "$scroll_target" --delay 2.5     --pidfile "$DATA/opencode.pid" --retries 10 >/dev/null 2>&1 &
+  scroll_target="$BOX_DIR/src/openbox-keys"
+  [ -x "$scroll_target" ] && sleep 1 && "$scroll_target" --delay 2.5     --pidfile "$DATA/opencode.pid" --retries 10 >/dev/null 2>&1 &
   exit 0
 fi
 
 # "run" mode: inside the terminal window
-cd "$CONTAINER_DIR/$PROJ"
+cd "$PROJECTS_DIR/$PROJ"
 mkdir -p "$DATA" "$SESSIONS_DIR" "$HANDOFFS_DIR"
 if [ ! -e "$DATA/opencode/auth.json" ]; then
   mkdir -p "$DATA/opencode"
@@ -55,8 +57,8 @@ export XDG_DATA_HOME="$DATA"
 export OPENCODE_DISABLE_AUTOCOMPACT=1
 
 # Token-price note at the start of every chat (peak vs off-peak DeepSeek hours).
-if [ -f "$BOX_DIR/tokenprice.sh" ]; then
-  bash "$BOX_DIR/tokenprice.sh" --notify 2>/dev/null || true
+if [ -f "$BOX_DIR/script/tokenprice.sh" ]; then
+  bash "$BOX_DIR/script/tokenprice.sh" --notify 2>/dev/null || true
 fi
 
 # Acquire this project's single-instance lock (replacing the previous holder,
@@ -84,9 +86,11 @@ cleanup() {
 trap cleanup EXIT
 
 PROMPT_ARGS=()
-if [ "${2:-}" = "continue" ]; then
-  PROMPT_ARGS=(--prompt "Continue the work. Read ${HANDOFFS_DIR}/LATEST.md and follow its 'Next steps' in order. Do not re-ask settled questions.")
-fi
+case "${2:-}" in
+  continue) PROMPT_ARGS=(--prompt "Continue the work. Read ${HANDOFFS_DIR}/LATEST.md and follow its 'Next steps' in order. Do not re-ask settled questions.") ;;
+  new) ;;
+  *) PROMPT_ARGS=(--continue) ;;
+esac
 
 if [ -r /dev/tty ]; then
   opencode --auto "${PROMPT_ARGS[@]}" </dev/tty &
@@ -95,20 +99,20 @@ else
 fi
 echo $! > "$DATA/opencode.pid"
 
-nohup bash "$BOX_DIR/auto-handoff.sh" --watch --name "Globe-Game" --data-dir "$DATA" --handoffs "$HANDOFFS_DIR" --pidfile "$DATA/opencode.pid" --workdir "$CONTAINER_DIR/$PROJ" --restart-cmd "$0 launch continue" >/dev/null 2>&1 &
+nohup bash "$BOX_DIR/script/auto-handoff.sh" --watch --name "Globe-Game" --data-dir "$DATA" --handoffs "$HANDOFFS_DIR" --pidfile "$DATA/opencode.pid" --workdir "$PROJECTS_DIR/$PROJ" --restart-cmd "$0 launch continue" >/dev/null 2>&1 &
 
 # Nonstop addon: auto-resume after an LLM timeout (sibling project, if present).
-if [ -f "$CONTAINER_DIR/nonstop/src/nonstop-watch.sh" ]; then
-  nohup bash "$CONTAINER_DIR/nonstop/src/nonstop-watch.sh" \
+if [ -f "$PROJECTS_DIR/nonstop/src/nonstop-watch.sh" ]; then
+  nohup bash "$PROJECTS_DIR/nonstop/src/nonstop-watch.sh" \
     --log "$DATA/opencode/log/opencode.log" \
     --pidfile "$DATA/opencode.pid" \
-    --typekeys "$CONTAINER_DIR/nonstop/src/typekeys.py" >/dev/null 2>&1 &
+    --typekeys "$PROJECTS_DIR/nonstop/src/typekeys.py" >/dev/null 2>&1 &
 fi
 
 # Autocommit addon: auto-commit stable changes (sibling project, if present).
-if [ -f "$CONTAINER_DIR/autocommit/src/autocommit-watch.sh" ]; then
-  nohup bash "$CONTAINER_DIR/autocommit/src/autocommit-watch.sh" \
-    --workdir "$CONTAINER_DIR/$PROJ" \
+if [ -f "$PROJECTS_DIR/autocommit/src/autocommit-watch.sh" ]; then
+  nohup bash "$PROJECTS_DIR/autocommit/src/autocommit-watch.sh" \
+    --workdir "$PROJECTS_DIR/$PROJ" \
     --pidfile "$DATA/opencode.pid" \
     --git "$BOX_DIR/plugins/git/git.sh">/dev/null 2>&1 &
 fi

@@ -43,3 +43,6 @@ data/
 # Generated/plugin dirs (never commit)
 tools/
 plugins/
+
+# LocalWaste (deleted-file dump; never commit)
+waste/
