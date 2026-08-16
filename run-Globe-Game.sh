@@ -41,7 +41,7 @@ if [ "${1:-launch}" = "launch" ]; then
     "$0" run "${2:-}" &
   fi
   # Auto-open the opencode sidebar once opencode is up and the window focused.
-  scroll_target="$BOX_DIR/src/openbox-keys"
+  scroll_target="$BOX_DIR/tools/openbox-keys"
   [ -x "$scroll_target" ] && sleep 1 && "$scroll_target" --delay 2.5     --pidfile "$DATA/opencode.pid" --retries 10 >/dev/null 2>&1 &
   exit 0
 fi
