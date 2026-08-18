@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Globe-Game
+GenericName=OpenCodeBox project terminal
+Comment=Open the Globe-Game project terminal
+Exec=/run/media/hubertg/SONIC/OpenCodeBox/git-projects/Globe-Game/box/scripts/Globe-Game.sh launch
+TryExec=/run/media/hubertg/SONIC/OpenCodeBox/git-projects/Globe-Game/box/scripts/Globe-Game.sh
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;

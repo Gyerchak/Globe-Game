@@ -1,0 +1,361 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-zen-free/deepseek-v4-flash-free",
+  "small_model": "opencode-zen-free/ling-3.0-tiny-free",
+  "default_agent": "build",
+  "providers": {
+    "opencode-zen": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "1. Opencode-Zen",
+      "options": {
+        "baseURL": "https://opencode.ai/zen/v1",
+        "apiKey": "{env:BOX_OPENCODE_ZEN_API_KEY}",
+        "timeout": 300000,
+        "chunkTimeout": 30000
+      },
+      "models": {
+        "deepseek-v4-pro": {
+          "compatibility": {
+            "reasoningField": "reasoning_content"
+          }
+        },
+        "deepseek-v4-flash": {
+          "compatibility": {
+            "reasoningField": "reasoning_content"
+          }
+        },
+        "gpt-5.6-luna": {},
+        "gpt-5.6-sol": {},
+        "gpt-5.6-terra": {},
+        "gemini-3.7-flash": {},
+        "glm-5.2": {},
+        "qwen3.6-plus": {},
+        "minimax-m3": {}
+      }
+    },
+    "opencode-zen-free": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "2. Opencode-Zen Free",
+      "options": {
+        "baseURL": "https://opencode.ai/zen/v1",
+        "apiKey": "{env:BOX_OPENCODE_ZEN_API_KEY}",
+        "timeout": 300000,
+        "chunkTimeout": 30000
+      },
+      "models": {
+        "big-pickle": {},
+        "deepseek-v4-flash-free": {
+          "compatibility": {
+            "reasoningField": "reasoning_content"
+          }
+        },
+        "mimo-v2.5-free": {},
+        "ling-3.0-flash-free": {},
+        "ling-3.0-tiny-free": {},
+        "nemotron-3-ultra-free": {},
+        "north-mini-code-free": {},
+        "laguna-s-2.1-free": {},
+        "longcat-2.0-free": {}
+      }
+    },
+    "opencode-go": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "3. Opencode-Go",
+      "options": {
+        "baseURL": "https://opencode.ai/zen/go/v1",
+        "apiKey": "{env:BOX_OPENCODE_GO_API_KEY}",
+        "timeout": 300000,
+        "chunkTimeout": 30000
+      },
+      "models": {
+        "deepseek-v4-pro": {
+          "compatibility": {
+            "reasoningField": "reasoning_content"
+          }
+        },
+        "glm-5": {},
+        "kimi-k3": {}
+      }
+    }
+  },
+  "agents": {
+    "chat": {
+      "description": "Casual conversational chat mode — no project work, no planning",
+      "mode": "primary",
+      "system": "You are Chat mode — a relaxed, human-like conversation mode. Do NOT do any project work, do NOT plan anything. Only touch tools when the user explicitly agrees or asks. Keep turns short and warm. If the user wants real work, tell them to switch to build / plan / adminchat mode.",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
+    },
+    "vision": {
+      "description": "Chat-like, vision-curious, read-only",
+      "mode": "primary",
+      "system": "You are Vision mode — chat-like and curious about images/screens, read-only. Look at what the user shares, describe what you see, and add raised points into the plan. Never edit files; never run mutating commands.",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
+    },
+    "detail": {
+      "description": "Precise interviewer, read-only",
+      "mode": "primary",
+      "system": "You are Detail mode — a precise interviewer. Ask exact, concrete questions one layer at a time and record the specifics into the plan. Read-only: never edit files; never run mutating commands.",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
+    },
+    "adminchat": {
+      "description": "Casual chat with full build access — builds only when you agree",
+      "mode": "primary",
+      "system": "You are Adminchat mode — casual chat WITH full build access. Talk like Chat mode, but when the user wants something done you may use the full toolset. Only build when the user has clearly agreed to it.",
+      "permissions": [
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
+    },
+    "notes": {
+      "description": "Quiet listener — saves useful info the user mentions",
+      "mode": "primary",
+      "system": "You are Notes mode — a quiet listener. Talk back as little as possible. When the user mentions something worth remembering, append it to the box notes dir (box/data/notes/<YYYYMMDD>.txt, create if missing) with a timestamp. Never edit anything else unless explicitly asked.",
+      "permissions": [
+        {
+          "action": "edit",
+          "resource": "*",
+          "effect": "deny"
+        },
+        {
+          "action": "shell",
+          "resource": "*",
+          "effect": "ask"
+        }
+      ]
+    },
+    "agent": {
+      "description": "Fully automated worker — looped tasks, logs everything",
+      "mode": "primary",
+      "system": "You are Agent mode — a fully automated worker that runs ongoing, looped tasks on its own. When given a goal, work on it continuously and independently. When the user starts talking, STOP, ask what they want, and only act on what they say. Log every major action to box/data/notes/<YYYYMMDD>.txt. Commit often. Keep the user informed with concise progress lines."
+    }
+  },
+  "commands": {
+    "modes": {
+      "description": "Button: agent-mode instruction set (layer 0modes). Optional: an option name or 'cycle'",
+      "template": "!`bash box/scripts/tools/toggles.sh set 0modes ${1:-cycle}`\nThe output above shows the new state of the Modes button. Acknowledge it in one short line and apply the new mode-instruction set from now on."
+    },
+    "logics": {
+      "description": "Button: logic-style instruction set (layer 1logics). Optional: an option name or 'cycle'",
+      "template": "!`bash box/scripts/tools/toggles.sh set 1logics ${1:-cycle}`\nThe output above shows the new state of the Logics button. Acknowledge it in one short line and follow the new logic style from now on."
+    },
+    "knowledges": {
+      "description": "Button: knowledge set (layer 2knowledges). Optional: an option name or 'cycle'",
+      "template": "!`bash box/scripts/tools/toggles.sh set 2knowledges ${1:-cycle}`\nThe output above shows the new state of the Knowledges button. Acknowledge it in one short line and apply the new knowledge set."
+    },
+    "instructions": {
+      "description": "Button: workflow instruction set (layer 3instructions). Optional: an option name or 'cycle'",
+      "template": "!`bash box/scripts/tools/toggles.sh set 3instructions ${1:-cycle}`\nThe output above shows the new state of the Instructions button. Acknowledge it in one short line and follow the new workflow set."
+    },
+    "characters": {
+      "description": "Button: persona (layer 4characters). Optional: an option name or 'cycle'",
+      "template": "!`bash box/scripts/tools/toggles.sh set 4characters ${1:-cycle}`\nThe output above shows the new state of the Characters button. Acknowledge it in one short line and adopt the new persona."
+    },
+    "commands": {
+      "description": "Button: command catalogue layer (5commands). Optional: an option name or 'cycle'",
+      "template": "!`bash box/scripts/tools/toggles.sh set 5commands ${1:-cycle}`\nThe output above shows the new state of the Commands button. Acknowledge it in one short line."
+    },
+    "deepthinking": {
+      "description": "Button: deep thinking ON/OFF (default ON; OFF = token/money-saving mode). No arg toggles",
+      "template": "!`bash box/scripts/tools/toggles.sh set deepthinking ${1:-toggle}`\nThe output above shows the new state of the Deep thinking button. Acknowledge it in one short line. If it is now OFF, switch IMMEDIATELY to minimal-reasoning, money-saving behaviour: think as little as needed, do not deliberate autonomously, require more direction from the user. If ON, resume deep reasoning."
+    },
+    "reasoning": {
+      "description": "Button: reasoning effort level (low|medium|high|ultra). No arg cycles",
+      "template": "!`bash box/scripts/tools/toggles.sh set reasoning ${1:-cycle}`\nThe output above shows the new reasoning level. Acknowledge it in one short line and match your reasoning effort to it."
+    },
+    "contextlimit": {
+      "description": "Button: per-chat context limit slider (66k → 1M, step 66k). Args: up|down|<n>k",
+      "template": "!`bash box/scripts/tools/toggles.sh set contextlimit ${1:-up}`\nThe output above shows the new context limit. Acknowledge it in one short line and treat it as your hard session budget from now on."
+    },
+    "thinklimit": {
+      "description": "Button: thinking window limit (on|off|up|down|<n>k; 0 → 666k, step 33k). No arg toggles on/off",
+      "template": "!`bash box/scripts/tools/toggles.sh set thinklimit ${1:-toggle}`\nThe output above shows the new thinking-limit state. Acknowledge it in one short line. If it is ON, from now on reason only within the allowed window of recent chat (a token/money saving measure). If OFF, you may reason over the full chat."
+    },
+    "thinking": {
+      "description": "Button: show/hide thinking blocks in the TUI (visibility only, not deep thinking)",
+      "template": "The Thinking button toggles thinking-block VISIBILITY in the TUI. It does not change how you reason. Tell the user: press Ctrl+X then t (keybind) to toggle it, or press /models→thinking controls in the TUI. Mention that /deepthinking is the separate switch that turns real deep thinking on/off."
+    },
+    "memorycollect": {
+      "description": "Button: memory collection ON/OFF. No arg toggles",
+      "template": "!`bash box/scripts/tools/toggles.sh set memorycollect ${1:-toggle}`\nThe output above shows the new memory-collection state. Acknowledge it in one short line. If ON, capture memory (box/data/notes + memory store) after significant progress from now on."
+    },
+    "memoryuse": {
+      "description": "Button: memory usage ON/OFF (memory becomes context source #1 when ON). No arg toggles",
+      "template": "!`bash box/scripts/tools/toggles.sh set memoryuse ${1:-toggle}`\nThe output above shows the new memory-usage state. Acknowledge it in one short line. If ON, read the memory store FIRST before session history, backups or GitHub history."
+    },
+    "agentsmodes": {
+      "description": "Button: layered AGENTS.md vs classic AGENTS.md (on=layered, off=classic). No arg toggles",
+      "template": "!`bash box/scripts/tools/toggles.sh set agentsmodes ${1:-toggle}`\nThe output above shows the new AGENTS/MODES state. Acknowledge it in one short line. If classic was selected, follow the classic monolithic AGENTS.md from now on; if layered, follow the composed layers."
+    },
+    "favmodel": {
+      "description": "Button: cycle favourite models (the /models favourites list)",
+      "template": "The favourite-model button cycles the models the user starred in the /models picker. Tell the user: press Ctrl+X then f to cycle favourites (Shift for reverse), F2 for recently used models — or open /models and pick one. No state was changed."
+    },
+    "boxhelp": {
+      "description": "Show all OpenCodeBox buttons and keybinds",
+      "template": "Print the full button/keybind table from the box's 5commands layer (box/agents/5commands/1-standard/commands.md) in a compact table, plus the workflow commands list. No other action."
+    },
+    "handoff": {
+      "description": "Write a handoff document so the next session auto-continues. $ARGUMENTS = focus for next session",
+      "template": "Write a handoff document compacting this conversation so a fresh session can continue. Save it to the box's handoffs folder (NOT the project workspace): if you are inside a project: <Project>/box/data/handoffs/handoff-<YYYYMMDD-HHMM>.md plus update LATEST.md there; if you are the box itself: box/data/handoffs/handoff-<YYYYMMDD-HHMM>.md plus LATEST.md. Include: State (done/in flight/blocked), Decisions made (reference artifacts by path), Next steps (ordered, exact first action), Suggested skills, Open questions/risks. Redact secrets. Then capture memory (/memory) and tell the user the doc path. Focus for the next session: $ARGUMENTS"
+    },
+    "memory": {
+      "description": "Capture session memory (short/long) into the memory store",
+      "template": "!`bash box/scripts/tools/memory.sh --capture 2>&1 | tail -30`\nThe output above shows the memory capture run. Report briefly what was captured and where it is stored."
+    },
+    "backup": {
+      "description": "Source-code backup of all projects into box/backup/srcbackups/",
+      "template": "!`bash box/scripts/tools/srcbackup.sh 2>&1 | tail -30`\nThe output above shows the source backup run. Report briefly what was backed up."
+    },
+    "git": {
+      "description": "Commit + push one or more projects: /git <Project...> \"message\"",
+      "template": "Run box/scripts/helpers/git-commit.sh for the listed projects with the given message, then push. Projects: $ARGUMENTS. If the message is missing, ask for one. Report the result."
+    },
+    "gitall": {
+      "description": "Backup + commit + push every git project",
+      "template": "Run box/scripts/tools/srcbackup.sh first, then for every project under git-projects/ run box/scripts/helpers/git-commit.sh with a sensible message, and push. Report a compact table of results."
+    },
+    "limits": {
+      "description": "Show context/thinking limits and usage logs",
+      "template": "!`bash box/scripts/tools/limits.sh --status 2>&1 | tail -20`\nAlso show the current button state: contextlimit, thinklimit, deepthinking, reasoning, memorycollect, memoryuse (run box/scripts/tools/toggles.sh current <layer> for each). Present it all in one compact table."
+    },
+    "status": {
+      "description": "Git status + last commits of every project",
+      "template": "For every project under git-projects/ (and the box repo itself) show: git status --short (first 10 lines), last commit, branch. Use a compact table. Also report which projects have unpushed commits."
+    },
+    "projects": {
+      "description": "Summaries of every project in the box",
+      "template": "List every project under git-projects/ and projects/ with a one-line summary each (read each README.md if present). Mark which have their own git remotes and which are local-only."
+    },
+    "session-history": {
+      "description": "Pull context from a past session",
+      "template": "List the sessions of this terminal (opencode2 api --standalone get /api/session, print id + title + updated). If the user names one, export it (opencode2 export --standalone -s <id>) and summarise the useful context. Focus: $ARGUMENTS"
+    },
+    "force": {
+      "description": "Override the daily hard token limit once",
+      "template": "!`bash box/scripts/tools/limits.sh --force 2>&1 | tail -5`\nThe output above shows the force-flag result. Acknowledge in one line."
+    },
+    "continue": {
+      "description": "Continue work from the latest handoff (LATEST.md)",
+      "template": "Read box/data/handoffs/LATEST.md (or <Project>/box/data/handoffs/LATEST.md inside a project) and follow its Next steps in order. Do not re-ask settled questions. Report what you are continuing."
+    },
+    "grill": {
+      "description": "Grill the user about a plan/idea before building. $ARGUMENTS = topic",
+      "template": "Run the grilling skill now. Interview the user relentlessly about $ARGUMENTS in rounds until you reach a shared understanding. Ask the whole frontier of open questions in one round, numbered, each with your recommended answer, then wait. Facts are your job; decisions are the user's. Do not act until the user confirms a shared understanding."
+    },
+    "wayfinder": {
+      "description": "Chart a huge effort as decision tickets. $ARGUMENTS = the idea",
+      "template": "Run the wayfinder skill now. Turn $ARGUMENTS into a shared map of decision tickets, then resolve them one at a time until the route is clear."
+    },
+    "ponytail": {
+      "description": "Force the laziest working solution. $ARGUMENTS = lite|full|ultra (optional)",
+      "template": "Run the ponytail skill now (intensity: $ARGUMENTS, default full). Apply it to everything from now on: question whether the task needs to exist, stdlib first, shortest diff that works."
+    }
+  },
+  "skills": [
+    "box/skills",
+    "../../box/skills"
+  ],
+  "permissions": [
+    {
+      "action": "edit",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "edit",
+      "resource": "/run/media/hubertg/SONIC/OpenCodeBox/git-projects/Globe-Game/**",
+      "effect": "allow"
+    },
+    {
+      "action": "edit",
+      "resource": "/tmp/opencodebox/**",
+      "effect": "allow"
+    },
+    {
+      "action": "external_directory",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "read",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "skill",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "mcp",
+      "resource": "*",
+      "effect": "allow"
+    },
+    {
+      "action": "subagent",
+      "resource": "*",
+      "effect": "allow"
+    }
+  ],
+  "mcp": {
+    "servers": {
+      "github": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@modelcontextprotocol/server-github"
+        ],
+        "environment": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:BOX_MCP_GITHUB_TOKEN}"
+        },
+        "enabled": true
+      }
+    }
+  },
+  "compaction": {
+    "auto": true,
+    "buffer": 20000
+  }
+}

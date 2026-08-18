@@ -46,3 +46,11 @@ plugins/
 
 # LocalWaste (deleted-file dump; never commit)
 waste/
+
+# OpenCodeBox
+box/TokenKeysMCP.env
+box/sessions/
+box/backup/
+box/waste/
+box/data/
+box/cfg/
