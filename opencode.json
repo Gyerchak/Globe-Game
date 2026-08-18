@@ -179,8 +179,20 @@
       "template": "!`bash box/scripts/tools/toggles.sh set deepthinking ${1:-toggle}`\nThe output above shows the new state of the Deep thinking button. Acknowledge it in one short line. If it is now OFF, switch IMMEDIATELY to minimal-reasoning, money-saving behaviour: think as little as needed, do not deliberate autonomously, require more direction from the user. If ON, resume deep reasoning."
     },
     "reasoning": {
-      "description": "Button: reasoning effort level (low|medium|high|ultra). No arg cycles",
-      "template": "!`bash box/scripts/tools/toggles.sh set reasoning ${1:-cycle}`\nThe output above shows the new reasoning level. Acknowledge it in one short line and match your reasoning effort to it."
+      "description": "Button: reasoning effort — exactly the model's /variants. No arg shows the current one",
+      "template": "!`bash box/scripts/tools/toggles.sh current reasoning`\nThe current reasoning/variant state is shown above. Reasoning is tied EXACTLY to the model variants (/variants in the TUI): tell the user to press Ctrl+T to cycle variants (or use the button bar's [v] key) — the highest variant is the default. Keep the box state in sync with what they pick."
+    },
+    "profile": {
+      "description": "Button: user profile whose notes guide the AI (empty by default). Args: name|cycle",
+      "template": "!`bash box/scripts/tools/toggles.sh set profiles ${1:-cycle}`\nThe output above shows the new user-profile state. Acknowledge it in one short line. If a profile is active, its notes (near the top of your instructions) describe the user — follow them from now on."
+    },
+    "askquestions": {
+      "description": "Button: asking questions ON/OFF (ON default; OFF = never ask, always decide yourself). No arg toggles",
+      "template": "!`bash box/scripts/tools/toggles.sh set askquestions ${1:-toggle}`\nThe output above shows the new ask-questions state. Acknowledge it in one short line. If it is now OFF, NEVER ask the user anything from now on — decide everything yourself and state assumptions."
+    },
+    "ramlimit": {
+      "description": "Button: /tmp/opencodebox RAM cap (on|off|up|down|<n>GiB, 1→12 GiB). No arg toggles",
+      "template": "!`bash box/scripts/tools/toggles.sh set ramlimit ${1:-toggle}`\nThe output above shows the new RAM-limit state for /tmp/opencodebox. Acknowledge it in one short line."
     },
     "contextlimit": {
       "description": "Button: per-chat context limit slider (66k → 1M, step 66k). Args: up|down|<n>k",

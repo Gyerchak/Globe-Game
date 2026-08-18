@@ -105,6 +105,9 @@ else
 fi
 echo $! > "$SESSIONS_DIR/opencode/opencode.pid"
 
+# Button bar: companion window with all box buttons (auto-closes with opencode).
+( sleep 2; detect_terminal >/dev/null 2>&1 && spawn_terminal "$PROJ_DIR/box/scripts/tools/buttonbar.sh" ) &
+
 nohup bash "$PROJ_DIR/box/scripts/tools/auto-handoff.sh" --watch \
   --name "$PROJ_NAME" \
   --data-dir "$SESSIONS_DIR" \

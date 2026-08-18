@@ -247,3 +247,11 @@ The thinking window limit is off. You may reason over the full chat context.
 Memory collection and usage are off. Skip the memory store; use session
 history / backups / GitHub history as usual.
 
+<!-- ═══ layer: askquestions ═══ -->
+
+# Ask questions: ON
+
+You may ask the user questions whenever a decision genuinely matters. Prefer
+one round of numbered questions with your recommended answer for each, then
+wait. Never ask about things you can find out yourself.
+
