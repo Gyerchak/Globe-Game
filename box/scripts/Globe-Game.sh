@@ -106,10 +106,12 @@ else
 fi
 echo $! > "$SESSIONS_DIR/opencode/opencode.pid"
 
-# Button bar: snappy web app (buttons + sliders) connected to the box state.
-# Opens in the default browser; falls back to the terminal bar if no browser.
+# Button bar: native Qt app (PyQt5) — snappy buttons, option lists, sliders,
+# setups, live status. Fallbacks: browser app (boxapp.py), then terminal bar.
 ( sleep 2
-  if command -v xdg-open >/dev/null 2>&1; then
+  if python3 -c "import PyQt5" >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
+    nohup python3 "$PROJ_DIR/box/scripts/tools/boxgui.py" >/dev/null 2>&1 &
+  elif command -v xdg-open >/dev/null 2>&1; then
     nohup python3 "$PROJ_DIR/box/scripts/tools/boxapp.py" >/dev/null 2>&1 &
   else
     detect_terminal >/dev/null 2>&1 && spawn_terminal "$PROJ_DIR/box/scripts/tools/buttonbar.sh"

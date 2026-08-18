@@ -236,9 +236,15 @@ via `/contextlimit`). Track your usage. Near the limit: save state, run
 
 <!-- ═══ layer: thinklimit ═══ -->
 
-# Thinking limit: OFF
+# Thinking context: OFF
 
-The thinking window limit is off. You may reason over the full chat context.
+The thinking context window is off. You may reason over the full chat context.
+
+<!-- ═══ layer: dynamiccontext ═══ -->
+
+# Dynamic context: OFF
+
+Normal context mode: the full conversation history is available.
 
 <!-- ═══ layer: memory ═══ -->
 

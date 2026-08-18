@@ -179,8 +179,16 @@
       "template": "!`bash box/scripts/tools/toggles.sh set deepthinking ${1:-toggle}`\nThe output above shows the new state of the Deep thinking button. Acknowledge it in one short line. If it is now OFF, switch IMMEDIATELY to minimal-reasoning, money-saving behaviour: think as little as needed, do not deliberate autonomously, require more direction from the user. If ON, resume deep reasoning."
     },
     "reasoning": {
-      "description": "Button: reasoning effort — exactly the model's /variants. No arg shows the current one",
-      "template": "!`bash box/scripts/tools/toggles.sh current reasoning`\nThe current reasoning/variant state is shown above. Reasoning is tied EXACTLY to the model variants (/variants in the TUI): tell the user to press Ctrl+T to cycle variants (or use the button bar's [v] key) — the highest variant is the default. Keep the box state in sync with what they pick."
+      "description": "Button: reasoning slider (low|medium|high|max|up|down). Mirrors the model variants; highest is the default",
+      "template": "!`bash box/scripts/tools/toggles.sh set reasoning ${1:-up}`\nThe output above shows the new reasoning level. Acknowledge it in one short line and match your reasoning effort to it. (The TUI variant is cycled with Ctrl+T — keep both in sync.)"
+    },
+    "dynamiccontext": {
+      "description": "Button: dynamic context mode ON/OFF (OFF default). ON = work with the recent context using the context-limit slider as your live budget; hard-turns the thinking-context limit OFF",
+      "template": "!`bash box/scripts/tools/toggles.sh set dynamiccontext ${1:-toggle}`\nThe output above shows the new dynamic-context state. Acknowledge it in one short line. If ON: switch to recent-context mode within the context-limit budget (the thinking-context limit is now off). If OFF: normal full-context mode."
+    },
+    "setup": {
+      "description": "Save/load/delete full button setups. Args: save <name> | load <name> | list | delete <name>",
+      "template": "!`bash box/scripts/tools/toggles.sh ${1:-list} setup $2`\nThe output above shows the setup operation result. Acknowledge it in one short line."
     },
     "profile": {
       "description": "Button: user profile whose notes guide the AI (empty by default). Args: name|cycle",
