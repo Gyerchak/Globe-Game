@@ -220,11 +220,11 @@ Every toggle persists: the next session starts with the same button state.
 - Verify your work before calling it done (re-read diffs, run checks).
 - Anticipate the next question and prepare for it.
 
-<!-- ═══ layer: reasoning → 2-medium ═══ -->
+<!-- ═══ layer: reasoning → 4-max ═══ -->
 
-# Reasoning level: MEDIUM
+# Reasoning level: MAX
 
-Balanced reasoning. Think through the problem, then answer without over-analysis.
+Exhaustive reasoning. Consider every relevant angle, verify each step, document assumptions.
 
 <!-- ═══ layer: contextlimit → 330k ═══ -->
 
@@ -254,4 +254,9 @@ history / backups / GitHub history as usual.
 You may ask the user questions whenever a decision genuinely matters. Prefer
 one round of numbered questions with your recommended answer for each, then
 wait. Never ask about things you can find out yourself.
+
+<!-- ═══ layer: writespeed ═══ -->
+
+Write at your normal pace (100%): a balanced response — complete but not
+wasteful.
 

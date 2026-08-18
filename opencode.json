@@ -194,6 +194,10 @@
       "description": "Button: /tmp/opencodebox RAM cap (on|off|up|down|<n>GiB, 1→12 GiB). No arg toggles",
       "template": "!`bash box/scripts/tools/toggles.sh set ramlimit ${1:-toggle}`\nThe output above shows the new RAM-limit state for /tmp/opencodebox. Acknowledge it in one short line."
     },
+    "writespeed": {
+      "description": "Button: writing speed slider (up|down|<n>%; 25→200, default 100%). Under 100 = slower paced output; over 100 = turbo, terse answers, quality trade-off for speed",
+      "template": "!`bash box/scripts/tools/toggles.sh set writespeed ${1:-up}`\nThe output above shows the new writing-speed state. Acknowledge it in one short line and apply it from now on: below 100% write slower and more measured; above 100% be terse, skip explanations, shortest valid output (speed over polish)."
+    },
     "contextlimit": {
       "description": "Button: per-chat context limit slider (66k → 1M, step 66k). Args: up|down|<n>k",
       "template": "!`bash box/scripts/tools/toggles.sh set contextlimit ${1:-up}`\nThe output above shows the new context limit. Acknowledge it in one short line and treat it as your hard session budget from now on."

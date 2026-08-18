@@ -67,6 +67,8 @@ init_one() {
   scaffold "$dir"
   git -C "$dir" init -q
   git -C "$dir" branch -m main
+  # copy-paste the main box template into the new project + generate its files
+  bash "$BOX_DIR/box/scripts/tools/make-project-runs.sh" "$proj" >/dev/null 2>&1 || true
   git -C "$dir" add -A
   git -C "$dir" commit -q -m "chore: scaffold $proj"
   gh repo create "$proj" --$vis --source "$dir" --push || true
