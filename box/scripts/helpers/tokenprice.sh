@@ -47,7 +47,7 @@ else
   level="cheap (OFF-PEAK)  -- peak starts in ${h}h ${m}m"
 fi
 
-note="DeepSeek tokens now: $level
+note="DeepSeek 🐋 tokens now: $level
 Peak hours (UTC): 01:00-04:00 & 06:00-10:00  |  off-peak = half price
 Local time: $(date '+%H:%M %Z')"
 

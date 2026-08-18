@@ -82,6 +82,10 @@ export OPENCODE_DISABLE_AUTOCOMPACT=1
 
 cd "$PROJ_DIR"
 
+# Give the terminal window a stable title so the button app can find it and
+# send it keys (the TUI lives inside the terminal emulator's window).
+printf '\033]0;OpenCodeBox: $PROJ_NAME\007'
+
 # Buttons cheat-sheet: the box buttons are slash commands + keybinds + the
 # button app that opens in your browser.
 echo "╭─ OpenCodeBox buttons ───────────────────────────────────────╮"
