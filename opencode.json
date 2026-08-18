@@ -5,25 +5,17 @@
   "default_agent": "build",
   "providers": {
     "opencode-zen": {
-      "npm": "@ai-sdk/openai-compatible",
       "name": "1. Opencode-Zen",
-      "options": {
-        "baseURL": "https://opencode.ai/zen/v1",
-        "apiKey": "{env:BOX_OPENCODE_ZEN_API_KEY}",
-        "timeout": 300000,
-        "chunkTimeout": 30000
+      "env": [
+        "BOX_OPENCODE_ZEN_API_KEY"
+      ],
+      "package": "@opencode-ai/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "https://opencode.ai/zen/v1"
       },
       "models": {
-        "deepseek-v4-pro": {
-          "compatibility": {
-            "reasoningField": "reasoning_content"
-          }
-        },
-        "deepseek-v4-flash": {
-          "compatibility": {
-            "reasoningField": "reasoning_content"
-          }
-        },
+        "deepseek-v4-pro": {},
+        "deepseek-v4-flash": {},
         "gpt-5.6-luna": {},
         "gpt-5.6-sol": {},
         "gpt-5.6-terra": {},
@@ -34,21 +26,17 @@
       }
     },
     "opencode-zen-free": {
-      "npm": "@ai-sdk/openai-compatible",
       "name": "2. Opencode-Zen Free",
-      "options": {
-        "baseURL": "https://opencode.ai/zen/v1",
-        "apiKey": "{env:BOX_OPENCODE_ZEN_API_KEY}",
-        "timeout": 300000,
-        "chunkTimeout": 30000
+      "env": [
+        "BOX_OPENCODE_ZEN_API_KEY"
+      ],
+      "package": "@opencode-ai/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "https://opencode.ai/zen/v1"
       },
       "models": {
         "big-pickle": {},
-        "deepseek-v4-flash-free": {
-          "compatibility": {
-            "reasoningField": "reasoning_content"
-          }
-        },
+        "deepseek-v4-flash-free": {},
         "mimo-v2.5-free": {},
         "ling-3.0-flash-free": {},
         "ling-3.0-tiny-free": {},
@@ -59,20 +47,16 @@
       }
     },
     "opencode-go": {
-      "npm": "@ai-sdk/openai-compatible",
       "name": "3. Opencode-Go",
-      "options": {
-        "baseURL": "https://opencode.ai/zen/go/v1",
-        "apiKey": "{env:BOX_OPENCODE_GO_API_KEY}",
-        "timeout": 300000,
-        "chunkTimeout": 30000
+      "env": [
+        "BOX_OPENCODE_GO_API_KEY"
+      ],
+      "package": "@opencode-ai/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "https://opencode.ai/zen/go/v1"
       },
       "models": {
-        "deepseek-v4-pro": {
-          "compatibility": {
-            "reasoningField": "reasoning_content"
-          }
-        },
+        "deepseek-v4-pro": {},
         "glm-5": {},
         "kimi-k3": {}
       }
