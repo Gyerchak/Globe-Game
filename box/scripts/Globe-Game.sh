@@ -82,6 +82,15 @@ export OPENCODE_DISABLE_AUTOCOMPACT=1
 
 cd "$PROJ_DIR"
 
+# Buttons cheat-sheet: the box buttons are slash commands + keybinds.
+echo "╭─ OpenCodeBox buttons ───────────────────────────────────────╮"
+echo "│  type / in the chat (or press Ctrl+P) to see the commands   │"
+echo "│  /deepthinking /reasoning /contextlimit /thinklimit         │"
+echo "│  /memorycollect /memoryuse /agentsmodes /characters …       │"
+echo "│  keybinds: Ctrl+X f favourites · Ctrl+X t thinking ·        │"
+echo "│            Shift+Tab switch agent · /boxhelp = full list    │"
+echo "╰─────────────────────────────────────────────────────────────╯"
+
 PROMPT_ARGS=()
 case "$ARG2" in
   continue) PROMPT_ARGS=(--prompt "Continue the work. Read $DATA_DIR/handoffs/LATEST.md and follow its 'Next steps' in order. Do not re-ask settled questions.") ;;
