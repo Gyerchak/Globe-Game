@@ -42,7 +42,7 @@ if [ "${1:-launch}" = "launch" ]; then
   fi
   # Auto-open the opencode sidebar once opencode is up and the window focused.
   scroll_target="$BOX_DIR/tools/openbox-keys"
-  [ -x "$scroll_target" ] && sleep 1 && "$scroll_target" --delay 2.5     --pidfile "$DATA/opencode.pid" --retries 10 >/dev/null 2>&1 &
+  [ -x "$scroll_target" ] && sleep 1 && "$scroll_target" --delay 2.5 --force     --pidfile "$DATA/opencode.pid" --retries 10 >/dev/null 2>&1 &
   exit 0
 fi
 
@@ -75,11 +75,11 @@ release_lock() {
 # On exit, export this project's sessions into its visible sessions/ folder.
 cleanup() {
   release_lock
-  mapfile -t IDs < <(opencode session list 2>/dev/null | grep -E '^ses_[A-Za-z0-9]+' | awk '{print $1}')
+  mapfile -t IDs < <(opencode2 api --standalone get /api/session 2>/dev/null |     jq -r '.data[].id // empty' 2>/dev/null | grep -E '^ses_[A-Za-z0-9]+')
   if [ "${#IDs[@]}" -gt 0 ]; then
     rm -f "$SESSIONS_DIR"/*.json
     for id in "${IDs[@]}"; do
-      opencode export "$id" > "$SESSIONS_DIR/$id.json" 2>/dev/null || true
+      opencode2 export --standalone -s "$id" > "$SESSIONS_DIR/$id.json" 2>/dev/null || true
     done
   fi
 }
@@ -92,10 +92,13 @@ case "${2:-}" in
   *) PROMPT_ARGS=(--continue) ;;
 esac
 
+# Keep opencode attached to the real terminal (avoid dumping the TUI as text
+# when backgrounded without a controlling stdin). --standalone gives this
+# project its own private server + session DB under its XDG_DATA_HOME.
 if [ -r /dev/tty ]; then
-  opencode --auto "${PROMPT_ARGS[@]}" </dev/tty &
+  opencode2 --standalone --auto "${PROMPT_ARGS[@]}" </dev/tty &
 else
-  opencode --auto "${PROMPT_ARGS[@]}" &
+  opencode2 --standalone --auto "${PROMPT_ARGS[@]}" &
 fi
 echo $! > "$DATA/opencode.pid"
 
