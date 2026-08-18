@@ -82,11 +82,12 @@ export OPENCODE_DISABLE_AUTOCOMPACT=1
 
 cd "$PROJ_DIR"
 
-# Buttons cheat-sheet: the box buttons are slash commands + keybinds.
+# Buttons cheat-sheet: the box buttons are slash commands + keybinds + the
+# button app that opens in your browser.
 echo "╭─ OpenCodeBox buttons ───────────────────────────────────────╮"
-echo "│  type / in the chat (or press Ctrl+P) to see the commands   │"
-echo "│  /deepthinking /reasoning /contextlimit /thinklimit         │"
-echo "│  /memorycollect /memoryuse /agentsmodes /characters …       │"
+echo "│  a button APP opened in your browser (buttons + sliders)    │"
+echo "│  also: type / in the chat (or Ctrl+P) for slash commands    │"
+echo "│  /deepthinking /reasoning /contextlimit /thinklimit …       │"
 echo "│  keybinds: Ctrl+X f favourites · Ctrl+X t thinking ·        │"
 echo "│            Shift+Tab switch agent · /boxhelp = full list    │"
 echo "╰─────────────────────────────────────────────────────────────╯"
@@ -105,8 +106,14 @@ else
 fi
 echo $! > "$SESSIONS_DIR/opencode/opencode.pid"
 
-# Button bar: companion window with all box buttons (auto-closes with opencode).
-( sleep 2; detect_terminal >/dev/null 2>&1 && spawn_terminal "$PROJ_DIR/box/scripts/tools/buttonbar.sh" ) &
+# Button bar: snappy web app (buttons + sliders) connected to the box state.
+# Opens in the default browser; falls back to the terminal bar if no browser.
+( sleep 2
+  if command -v xdg-open >/dev/null 2>&1; then
+    nohup python3 "$PROJ_DIR/box/scripts/tools/boxapp.py" >/dev/null 2>&1 &
+  else
+    detect_terminal >/dev/null 2>&1 && spawn_terminal "$PROJ_DIR/box/scripts/tools/buttonbar.sh"
+  fi ) &
 
 nohup bash "$PROJ_DIR/box/scripts/tools/auto-handoff.sh" --watch \
   --name "$PROJ_NAME" \
