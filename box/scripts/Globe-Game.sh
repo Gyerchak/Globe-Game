@@ -43,7 +43,7 @@ fi
 SESSIONS_DIR="$PROJ_DIR/box/sessions"
 CFG_DIR="$PROJ_DIR/box/cfg"
 DATA_DIR="$PROJ_DIR/box/sessions"
-mkdir -p "$SESSIONS_DIR" "$CFG_DIR/opencode" "$DATA_DIR/notes" "$DATA_DIR/limitlogs" "$DATA_DIR/memory" "$DATA_DIR/exports" "$PROJ_DIR/box/backup" "$PROJ_DIR/box/waste"
+mkdir -p "$SESSIONS_DIR" "$CFG_DIR/opencode" "$DATA_DIR/notes" "$DATA_DIR/limitlogs" "$DATA_DIR/memory" "$DATA_DIR/exports" "$PROJ_DIR/box/backups" "$PROJ_DIR/box/waste"
 
 bash "$PROJ_DIR/box/scripts/tools/tmpbox.sh" ensure
 

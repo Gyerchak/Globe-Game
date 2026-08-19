@@ -18,7 +18,7 @@ AGENTS_DIR="$BOX_DIR/box/agents"
 SCRIPTS_DIR="$BOX_DIR/box/scripts"
 SESSIONS_DIR="$BOX_DIR/box/sessions"
 CFG_DIR="$BOX_DIR/box/cfg"
-BACKUP_DIR="$BOX_DIR/box/backup"
+BACKUP_DIR="$BOX_DIR/box/backups"
 WASTE_DIR="$BOX_DIR/box/waste"
 RAM_DIR="/tmp/opencodebox"
 # runtime state lives under sessions/ (no legacy box/data/ dir anymore)
