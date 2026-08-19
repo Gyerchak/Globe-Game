@@ -73,7 +73,9 @@ bash "$PROJ_DIR/box/scripts/tools/compose-agents.sh" || true
 bash "$PROJ_DIR/box/scripts/tools/gen-box-config.sh" "$PROJ_DIR" || true
 cp -f "$PROJ_DIR/box/cli.json" "$CFG_DIR/opencode/cli.json"
 mkdir -p "$CFG_DIR/opencode/plugins/tui"
-cp -f "$PROJ_DIR/box/scripts/tools/tui-plugin/agentmixer.ts" "$CFG_DIR/opencode/plugins/tui/agentmixer.ts" 2>/dev/null || true
+rm -f "$CFG_DIR/opencode/plugins/tui/buttonbar.ts" "$CFG_DIR/opencode/plugins/tui/agentmixer.ts"
+cp -f "$PROJ_DIR/box/scripts/tools/tui-plugin/agentmixer.tsx" "$CFG_DIR/opencode/plugins/tui/agentmixer.tsx" 2>/dev/null || true
+cp -f "$PROJ_DIR/box/scripts/tools/tui-plugin/package.json" "$CFG_DIR/opencode/package.json" 2>/dev/null || true
 
 source <(bash "$PROJ_DIR/box/scripts/tools/keys.sh" "$PROJ_DIR")
 
