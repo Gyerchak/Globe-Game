@@ -150,6 +150,18 @@ it after the current response finishes.
 
 Normal behaviour: wait for the user when needed.
 
+<!-- ═══ layer: loopfix ═══ -->
+
+# Fix loops: off
+
+Normal behaviour — no special loop watching.
+
+<!-- ═══ layer: testing ═══ -->
+
+# Testing: ON
+
+You may run tests yourself while building.
+
 <!-- ═══ layer: deepthinking → 1-on ═══ -->
 
 # Deep thinking: ON
