@@ -1,6 +1,6 @@
 <!-- ═══════════════════════════════════════════════════════════════════
      GENERATED FILE — do not edit by hand.
-     Source of truth: box/agents/ (layers + ACTIVE state + MOTIVATION.md)
+     Source of truth: box/agents/ (layers + their ACTIVE / ORDER / ON state files)
      Regenerate: box/scripts/tools/compose-agents.sh
      ═══════════════════════════════════════════════════════════════════ -->
 
