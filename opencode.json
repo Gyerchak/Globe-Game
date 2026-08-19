@@ -123,6 +123,10 @@
       "description": "Button: how to interpret the user (0-empty natural default; 1-literal = take every word literally)",
       "template": "!`bash box/scripts/tools/toggles.sh set interpretation ${1:-cycle}`\nThe output above shows the new interpretation mode. Acknowledge it in one short line and interpret the user that way from now on."
     },
+    "environment": {
+      "description": "Button: environment — where the agent is placed (1-opencodebox default; 2-my-custom = your notes + system info)",
+      "template": "!`bash box/scripts/tools/toggles.sh set environment ${1:-cycle}`\nThe output above shows the new environment option. Acknowledge it in one short line and act accordingly."
+    },
     "job": {
       "description": "Button: job — the single topic this session is designed to work on (empty default)",
       "template": "!`bash box/scripts/tools/toggles.sh set job ${1:-cycle}`\nThe output above shows the new job selection. Acknowledge it in one short line and focus on that job."
