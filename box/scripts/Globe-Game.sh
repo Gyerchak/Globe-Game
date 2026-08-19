@@ -86,12 +86,22 @@ cd "$PROJ_DIR"
 # send it keys (the TUI lives inside the terminal emulator's window).
 printf '\033]0;OpenCodeBox: $PROJ_NAME\007\033]2;OpenCodeBox: $PROJ_NAME\007'
 
-# Capture this terminal's exact X window id so the button app can target it
-# precisely. The terminal becomes the ACTIVE window right after it opens —
-# poll it (verify the window class is a terminal emulator) before the app
-# takes focus.
+# Capture the terminal emulator's PID (its process owns the X window) by
+# walking up the process tree from this shell. Deterministic — no focus or
+# timing dependence. Fallback: poll the active window for a terminal class.
 rm -f "$SESSIONS_DIR/opencode/terminal.wid"
-( for i in $(seq 1 60); do
+( ppid="$$"
+  for i in $(seq 1 12); do
+    cmd="$(ps -o comm= -p "$ppid" 2>/dev/null | head -1)"
+    case "$cmd" in
+      konsole|alacritty|kitty|xterm|foot|wezterm|terminator|lxterminal|sakura|tilix|gnome-terminal*)
+        echo "pid $ppid" > "$SESSIONS_DIR/opencode/terminal.wid"
+        exit 0 ;;
+    esac
+    ppid="$(ps -o ppid= -p "$ppid" 2>/dev/null | tr -d ' ')"
+    case "$ppid" in ""|0|1) break ;; esac
+  done
+  for i in $(seq 1 40); do
     WID="$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | grep -oE '0x[0-9a-fA-F]+' | head -1)"
     if [ -n "$WID" ]; then
       cls="$(xprop -id "$WID" WM_CLASS 2>/dev/null | tr 'A-Z' 'a-z')"
