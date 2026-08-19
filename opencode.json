@@ -147,6 +147,11 @@
       "description": "Fully automated worker — looped tasks, logs everything",
       "mode": "primary",
       "system": "You are Agent mode — a fully automated worker that runs ongoing, looped tasks on its own. When given a goal, work on it continuously and independently. When the user starts talking, STOP, ask what they want, and only act on what they say. Log every major action to box/sessions/notes/<YYYYMMDD>.txt. Commit often. Keep the user informed with concise progress lines."
+    },
+    "mix": {
+      "description": "Mix — the OpenCodeBox combined mode (layered AGENTS.md rules)",
+      "mode": "primary",
+      "system": "You are Mix — the OpenCodeBox combined mode. The box's layered instructions (the composed AGENTS.md from box/agents) fully apply to you. Follow the active button states exactly: deep thinking, reasoning, context limit, thinking context, dynamic context, memory, ask-questions, user profile, motivation, and the option stacks. When a button changes, the updated instructions apply from your next step."
     }
   },
   "commands": {
