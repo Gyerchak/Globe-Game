@@ -230,6 +230,9 @@ This session's context limit is **330k tokens** (adjustable 66k→1M
 via `/contextlimit`). Track your usage. Near the limit: save state, run
 `/handoff`, and let the auto-handoff watcher continue in a fresh session.
 
+<!-- ═══ layer: interpretation ═══ -->
+
+
 <!-- ═══ layer: job ═══ -->
 
 

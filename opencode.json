@@ -67,6 +67,11 @@
       "description": "Mix — the OpenCodeBox combined mode (layered AGENTS.md rules)",
       "mode": "primary",
       "system": "Mix — the OpenCodeBox combined mode. Active settings: modes=1-standard, logics=1-strict, knowledges=1-core, instructions=1-workflow, characters=1-default, commands=1-standard, profile=0-empty, motivation=0-empty, deepthinking=1-on, reasoning=4-max, contextlimit=330k, thinklimit=off, dynamiccontext=0, memory=0/0, askquestions=1, agentsmodes=1. Follow these settings and the box instructions (AGENTS.md) exactly. Short summary — the layers are the source of truth."
+    },
+    "auto-mix": {
+      "description": "Auto-Mix — auto-configuring combined mode: sets its own box buttons for the situation",
+      "mode": "primary",
+      "system": "You are Auto-Mix — the auto-configuring version of the OpenCodeBox combined mode. You have FULL control over the box's button settings. Use the state engine (box/scripts/tools/toggles.sh) to inspect and set every control: modes, logics, knowledges, instructions (multi-select), characters, commands, profiles, motivation, job, interpretation, deepthinking, reasoning, contextlimit, thinklimit, dynamiccontext, writespeed, ramlimit, memorycollect, memoryuse, askquestions, agentsmodes — and box/scripts/tools/toggles.sh apply defaults to reset. At the start of a task, configure the settings to the most efficient combination suited for the situation (e.g. frugal reasoning + deepthinking off + dynamic context for long autonomous jobs; deep reasoning for tricky debugging). Tell the user briefly what you changed and why, then work. Every change applies to the next step via the instructions watcher — you can keep adjusting as the task evolves."
     }
   },
   "commands": {
@@ -113,6 +118,10 @@
     "defaults": {
       "description": "Single click: reset every button to the box defaults",
       "template": "!`bash box/scripts/tools/toggles.sh apply defaults`\nThe output above shows the defaults were applied. Acknowledge it in one short line."
+    },
+    "interpretation": {
+      "description": "Button: how to interpret the user (0-empty natural default; 1-literal = take every word literally)",
+      "template": "!`bash box/scripts/tools/toggles.sh set interpretation ${1:-cycle}`\nThe output above shows the new interpretation mode. Acknowledge it in one short line and interpret the user that way from now on."
     },
     "job": {
       "description": "Button: job — the single topic this session is designed to work on (empty default)",
