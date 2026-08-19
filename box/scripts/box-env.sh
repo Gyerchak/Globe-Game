@@ -18,10 +18,16 @@ AGENTS_DIR="$BOX_DIR/box/agents"
 SCRIPTS_DIR="$BOX_DIR/box/scripts"
 SESSIONS_DIR="$BOX_DIR/box/sessions"
 CFG_DIR="$BOX_DIR/box/cfg"
-DATA_DIR="$BOX_DIR/box/data"
 BACKUP_DIR="$BOX_DIR/box/backup"
 WASTE_DIR="$BOX_DIR/box/waste"
 RAM_DIR="/tmp/opencodebox"
+# runtime state lives under sessions/ (no legacy box/data/ dir anymore)
+HANDOFFS_DIR="$SESSIONS_DIR/handoffs"
+NOTES_DIR="$SESSIONS_DIR/notes"
+LIMIT_DIR="$SESSIONS_DIR/limitlogs"
+MEM_DIR="$SESSIONS_DIR/memory"
+EXPORTS_DIR="$SESSIONS_DIR/exports"
+SETUPS_DIR="$AGENTS_DIR/setups"
 
 # opencode2 ships as a standalone binary in ~/.opencode/bin; spawned terminals
 # are non-login shells, so make sure it is always resolvable.

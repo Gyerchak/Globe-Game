@@ -42,8 +42,8 @@ fi
 # ── "run" mode ──
 SESSIONS_DIR="$PROJ_DIR/box/sessions"
 CFG_DIR="$PROJ_DIR/box/cfg"
-DATA_DIR="$PROJ_DIR/box/data"
-mkdir -p "$SESSIONS_DIR" "$CFG_DIR/opencode" "$DATA_DIR/handoffs" "$DATA_DIR/notes" "$DATA_DIR/limitlogs" "$PROJ_DIR/box/backup" "$PROJ_DIR/box/waste"
+DATA_DIR="$PROJ_DIR/box/sessions"
+mkdir -p "$SESSIONS_DIR" "$CFG_DIR/opencode" "$DATA_DIR/handoffs" "$DATA_DIR/notes" "$DATA_DIR/limitlogs" "$DATA_DIR/memory" "$DATA_DIR/exports" "$PROJ_DIR/box/backup" "$PROJ_DIR/box/waste"
 
 bash "$PROJ_DIR/box/scripts/tools/tmpbox.sh" ensure
 
@@ -86,12 +86,23 @@ cd "$PROJ_DIR"
 # send it keys (the TUI lives inside the terminal emulator's window).
 printf '\033]0;OpenCodeBox: $PROJ_NAME\007\033]2;OpenCodeBox: $PROJ_NAME\007'
 
-# Capture this terminal's exact X window id (the terminal is the active
-# window right after it opens) so the button app can target it precisely.
-( sleep 1.5
-  WID="${WINDOWID:-}"
-  [ -n "$WID" ] || WID="$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | grep -oE '0x[0-9a-fA-F]+' | head -1)"
-  [ -n "$WID" ] && echo "$WID" > "$SESSIONS_DIR/opencode/terminal.wid"
+# Capture this terminal's exact X window id so the button app can target it
+# precisely. Poll the window list for OUR terminal (title contains
+# "OpenCodeBox"); fall back to the active window when it is a terminal.
+( for i in $(seq 1 20); do
+    WID=""
+    for w in $(xprop -root _NET_CLIENT_LIST 2>/dev/null | grep -oE '0x[0-9a-fA-F]+'); do
+      title="$(xprop -id "$w" WM_NAME 2>/dev/null | grep -oiE 'opencodebox' | head -1)"
+      [ -n "$title" ] && WID="$w" && break
+    done
+    [ -n "$WID" ] && { echo "$WID" > "$SESSIONS_DIR/opencode/terminal.wid"; exit 0; }
+    sleep 0.5
+  done
+  WID="$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | grep -oE '0x[0-9a-fA-F]+' | head -1)"
+  cls="$(xprop -id "$WID" WM_CLASS 2>/dev/null | tr 'A-Z' 'a-z')"
+  case "$cls" in *konsole*|*alacritty*|*kitty*|*xterm*|*foot*|*wezterm*|*terminator*|*gnome-terminal*|*lxterminal*|*sakura*|*tilix*)
+    echo "$WID" > "$SESSIONS_DIR/opencode/terminal.wid" ;;
+  esac
 ) &
 
 # Buttons cheat-sheet: the box buttons are slash commands + keybinds + the

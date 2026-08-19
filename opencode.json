@@ -129,7 +129,7 @@
     "notes": {
       "description": "Quiet listener — saves useful info the user mentions",
       "mode": "primary",
-      "system": "You are Notes mode — a quiet listener. Talk back as little as possible. When the user mentions something worth remembering, append it to the box notes dir (box/data/notes/<YYYYMMDD>.txt, create if missing) with a timestamp. Never edit anything else unless explicitly asked.",
+      "system": "You are Notes mode — a quiet listener. Talk back as little as possible. When the user mentions something worth remembering, append it to the box notes dir (box/sessions/notes/<YYYYMMDD>.txt, create if missing) with a timestamp. Never edit anything else unless explicitly asked.",
       "permissions": [
         {
           "action": "edit",
@@ -146,7 +146,7 @@
     "agent": {
       "description": "Fully automated worker — looped tasks, logs everything",
       "mode": "primary",
-      "system": "You are Agent mode — a fully automated worker that runs ongoing, looped tasks on its own. When given a goal, work on it continuously and independently. When the user starts talking, STOP, ask what they want, and only act on what they say. Log every major action to box/data/notes/<YYYYMMDD>.txt. Commit often. Keep the user informed with concise progress lines."
+      "system": "You are Agent mode — a fully automated worker that runs ongoing, looped tasks on its own. When given a goal, work on it continuously and independently. When the user starts talking, STOP, ask what they want, and only act on what they say. Log every major action to box/sessions/notes/<YYYYMMDD>.txt. Commit often. Keep the user informed with concise progress lines."
     }
   },
   "commands": {
@@ -224,7 +224,7 @@
     },
     "memorycollect": {
       "description": "Button: memory collection ON/OFF. No arg toggles",
-      "template": "!`bash box/scripts/tools/toggles.sh set memorycollect ${1:-toggle}`\nThe output above shows the new memory-collection state. Acknowledge it in one short line. If ON, capture memory (box/data/notes + memory store) after significant progress from now on."
+      "template": "!`bash box/scripts/tools/toggles.sh set memorycollect ${1:-toggle}`\nThe output above shows the new memory-collection state. Acknowledge it in one short line. If ON, capture memory (box/sessions/notes + memory store) after significant progress from now on."
     },
     "memoryuse": {
       "description": "Button: memory usage ON/OFF (memory becomes context source #1 when ON). No arg toggles",
@@ -244,7 +244,7 @@
     },
     "handoff": {
       "description": "Write a handoff document so the next session auto-continues. $ARGUMENTS = focus for next session",
-      "template": "Write a handoff document compacting this conversation so a fresh session can continue. Save it to the box's handoffs folder (NOT the project workspace): if you are inside a project: <Project>/box/data/handoffs/handoff-<YYYYMMDD-HHMM>.md plus update LATEST.md there; if you are the box itself: box/data/handoffs/handoff-<YYYYMMDD-HHMM>.md plus LATEST.md. Include: State (done/in flight/blocked), Decisions made (reference artifacts by path), Next steps (ordered, exact first action), Suggested skills, Open questions/risks. Redact secrets. Then capture memory (/memory) and tell the user the doc path. Focus for the next session: $ARGUMENTS"
+      "template": "Write a handoff document compacting this conversation so a fresh session can continue. Save it to the box's handoffs folder (NOT the project workspace): if you are inside a project: <Project>/box/sessions/handoffs/handoff-<YYYYMMDD-HHMM>.md plus update LATEST.md there; if you are the box itself: box/sessions/handoffs/handoff-<YYYYMMDD-HHMM>.md plus LATEST.md. Include: State (done/in flight/blocked), Decisions made (reference artifacts by path), Next steps (ordered, exact first action), Suggested skills, Open questions/risks. Redact secrets. Then capture memory (/memory) and tell the user the doc path. Focus for the next session: $ARGUMENTS"
     },
     "memory": {
       "description": "Capture session memory (short/long) into the memory store",
@@ -284,7 +284,7 @@
     },
     "continue": {
       "description": "Continue work from the latest handoff (LATEST.md)",
-      "template": "Read box/data/handoffs/LATEST.md (or <Project>/box/data/handoffs/LATEST.md inside a project) and follow its Next steps in order. Do not re-ask settled questions. Report what you are continuing."
+      "template": "Read box/sessions/handoffs/LATEST.md (or <Project>/box/sessions/handoffs/LATEST.md inside a project) and follow its Next steps in order. Do not re-ask settled questions. Report what you are continuing."
     },
     "grill": {
       "description": "Grill the user about a plan/idea before building. $ARGUMENTS = topic",
