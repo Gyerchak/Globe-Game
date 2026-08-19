@@ -1,6 +1,6 @@
-# Preferences: ON
+# Preferences: outputperformance
 
-FOLLOW box/preferences.cfg strictly: per category use the listed items IN
+FOLLOW box/preferences.md strictly: per category use the listed items IN
 ORDER; only if one fails, fall back to the next, and only after the whole
 list fails may you use other ways (and say so). This includes the code
 conventions under [code]: modern RAII C++, const-correctness, stdlib first,
