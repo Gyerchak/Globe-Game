@@ -131,7 +131,7 @@ always reply in the language the user is writing in.
 Never print, log, or commit API keys/tokens. `TokenKeysMCP.env` files are
 gitignored — if you see one staged in git, stop and warn the user.
 
-<!-- ═══ layer: 3instructions → 1-workflow ═══ -->
+<!-- ═══ layer: 3instructions (ordered multi-select) ═══ -->
 
 # Workflow instructions
 

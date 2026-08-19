@@ -204,21 +204,18 @@
     },
     "grill": {
       "description": "Grill the user about a plan/idea before building. $ARGUMENTS = topic",
-      "template": "Run the grilling skill now. Interview the user relentlessly about $ARGUMENTS in rounds until you reach a shared understanding. Ask the whole frontier of open questions in one round, numbered, each with your recommended answer, then wait. Facts are your job; decisions are the user's. Do not act until the user confirms a shared understanding."
+      "template": "Select the grilling instructions: !`bash box/scripts/tools/toggles.sh set 3instructions 4-grilling`\nInterview the user relentlessly about $ARGUMENTS in rounds until you reach a shared understanding. Ask the whole frontier of open questions in one round, numbered, each with your recommended answer, then wait. Facts are your job; decisions are the user's. Do not act until the user confirms a shared understanding."
     },
     "wayfinder": {
       "description": "Chart a huge effort as decision tickets. $ARGUMENTS = the idea",
-      "template": "Run the wayfinder skill now. Turn $ARGUMENTS into a shared map of decision tickets, then resolve them one at a time until the route is clear."
+      "template": "Select the wayfinder instructions: !`bash box/scripts/tools/toggles.sh set 3instructions 5-wayfinder`\nTurn $ARGUMENTS into a shared map of decision tickets, then resolve them one at a time until the route is clear."
     },
     "ponytail": {
       "description": "Force the laziest working solution. $ARGUMENTS = lite|full|ultra (optional)",
-      "template": "Run the ponytail skill now (intensity: $ARGUMENTS, default full). Apply it to everything from now on: question whether the task needs to exist, stdlib first, shortest diff that works."
+      "template": "Select the ponytail instructions: !`bash box/scripts/tools/toggles.sh set 3instructions 3-ponytail`\nApply ponytail (intensity: $ARGUMENTS, default full) to everything from now on: question whether the task needs to exist, stdlib first, shortest diff that works."
     }
   },
-  "skills": [
-    "box/skills",
-    "../../box/skills"
-  ],
+  "skills": [],
   "permissions": [
     {
       "action": "edit",
