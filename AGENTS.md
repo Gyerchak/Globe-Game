@@ -41,7 +41,11 @@ websearch: allow
 Do the task with the full toolset. Everything else comes from the other
 layers (instructions, logic, character…).
 
+<!-- ═══ layer: morality (ordered multi-select) ═══ -->
+
 <!-- ═══ layer: rules (ordered multi-select) ═══ -->
+
+<!-- ═══ layer: soul (ordered multi-select) ═══ -->
 
 <!-- ═══ layer: askquestions ═══ -->
 
