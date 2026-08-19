@@ -72,6 +72,8 @@ trap cleanup EXIT
 bash "$PROJ_DIR/box/scripts/tools/compose-agents.sh" || true
 bash "$PROJ_DIR/box/scripts/tools/gen-box-config.sh" "$PROJ_DIR" || true
 cp -f "$PROJ_DIR/box/cli.json" "$CFG_DIR/opencode/cli.json"
+mkdir -p "$CFG_DIR/opencode/plugins/tui"
+cp -f "$PROJ_DIR/box/scripts/tools/tui-plugin/buttonbar.ts" "$CFG_DIR/opencode/plugins/tui/buttonbar.ts" 2>/dev/null || true
 
 source <(bash "$PROJ_DIR/box/scripts/tools/keys.sh" "$PROJ_DIR")
 
