@@ -89,7 +89,8 @@ printf '\033]0;OpenCodeBox: $PROJ_NAME\007\033]2;OpenCodeBox: $PROJ_NAME\007'
 # Capture this terminal's exact X window id (the terminal is the active
 # window right after it opens) so the button app can target it precisely.
 ( sleep 1.5
-  WID="$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | grep -oE '0x[0-9a-fA-F]+' | head -1)"
+  WID="${WINDOWID:-}"
+  [ -n "$WID" ] || WID="$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | grep -oE '0x[0-9a-fA-F]+' | head -1)"
   [ -n "$WID" ] && echo "$WID" > "$SESSIONS_DIR/opencode/terminal.wid"
 ) &
 
