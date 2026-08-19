@@ -4,18 +4,25 @@
      Regenerate: box/scripts/tools/compose-agents.sh
      ═══════════════════════════════════════════════════════════════════ -->
 
-<!-- ═══ layer: 0modes → 1-standard ═══ -->
+<!-- ═══ layer: 0modes → 1-build ═══ -->
 
-# Modes
+# Mode: build
 
-You are one agent; your behaviour depends on the active opencode agent
-(switchable with Tab / the agent list). Respect the selected agent's nature:
+The normal working mode — full access, the classic build agent.
 
-- **build** — the normal working mode: full toolset, do the task.
-- **plan** — read-only planning: explore, analyse, produce a plan; no edits.
-- **general** — a subagent for research and multi-step work.
+## Permissions (mirrors the classic build mode)
 
-When in doubt which mode fits, tell the user which mode you recommend and why.
+```
+edit:      allow   # all files inside the box container
+write:     allow   # all files inside the box container
+shell:     allow   # full shell inside the boundary
+read:      allow   # anywhere on the computer
+webfetch:  allow
+websearch: allow
+```
+
+Do the task with the full toolset. Everything else comes from the other
+layers (instructions, logic, character…).
 
 <!-- ═══ layer: 1logics → 1-strict ═══ -->
 
