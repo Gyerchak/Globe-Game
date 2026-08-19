@@ -114,6 +114,10 @@
       "description": "Single click: reset every button to the box defaults",
       "template": "!`bash box/scripts/tools/toggles.sh apply defaults`\nThe output above shows the defaults were applied. Acknowledge it in one short line."
     },
+    "job": {
+      "description": "Button: job — the single topic this session is designed to work on (empty default)",
+      "template": "!`bash box/scripts/tools/toggles.sh set job ${1:-cycle}`\nThe output above shows the new job selection. Acknowledge it in one short line and focus on that job."
+    },
     "motivation": {
       "description": "Button: motivational speech layer (empty by default; 1-placeholder = your fill-in option)",
       "template": "!`bash box/scripts/tools/toggles.sh set motivation ${1:-cycle}`\nThe output above shows the new motivation option. Acknowledge it in one short line."
