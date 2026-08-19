@@ -8,7 +8,7 @@
 #   SCRIPTS_DIR    = BOX_DIR/box/scripts
 #   SESSIONS_DIR   = BOX_DIR/box/sessions        (opencode's own data home)
 #   CFG_DIR        = BOX_DIR/box/cfg             (isolated XDG config home)
-#   DATA_DIR       = BOX_DIR/box/data            (handoffs, notes, limitlogs)
+#   (runtime state lives under SESSIONS_DIR: notes, limitlogs, memory, exports)
 #   RAM_DIR        = /tmp/opencodebox            (RAM scratch, only external write dir)
 
 if [ -z "${BOX_DIR:-}" ]; then
@@ -22,7 +22,6 @@ BACKUP_DIR="$BOX_DIR/box/backup"
 WASTE_DIR="$BOX_DIR/box/waste"
 RAM_DIR="/tmp/opencodebox"
 # runtime state lives under sessions/ (no legacy box/data/ dir anymore)
-HANDOFFS_DIR="$SESSIONS_DIR/handoffs"
 NOTES_DIR="$SESSIONS_DIR/notes"
 LIMIT_DIR="$SESSIONS_DIR/limitlogs"
 MEM_DIR="$SESSIONS_DIR/memory"

@@ -242,10 +242,6 @@
       "description": "Show all OpenCodeBox buttons and keybinds",
       "template": "Print the full button/keybind table from the box's 5commands layer (box/agents/5commands/1-standard/commands.md) in a compact table, plus the workflow commands list. No other action."
     },
-    "handoff": {
-      "description": "Write a handoff document so the next session auto-continues. $ARGUMENTS = focus for next session",
-      "template": "Write a handoff document compacting this conversation so a fresh session can continue. Save it to the box's handoffs folder (NOT the project workspace): if you are inside a project: <Project>/box/sessions/handoffs/handoff-<YYYYMMDD-HHMM>.md plus update LATEST.md there; if you are the box itself: box/sessions/handoffs/handoff-<YYYYMMDD-HHMM>.md plus LATEST.md. Include: State (done/in flight/blocked), Decisions made (reference artifacts by path), Next steps (ordered, exact first action), Suggested skills, Open questions/risks. Redact secrets. Then capture memory (/memory) and tell the user the doc path. Focus for the next session: $ARGUMENTS"
-    },
     "memory": {
       "description": "Capture session memory (short/long) into the memory store",
       "template": "!`bash box/scripts/tools/memory.sh --capture 2>&1 | tail -30`\nThe output above shows the memory capture run. Report briefly what was captured and where it is stored."
@@ -281,10 +277,6 @@
     "force": {
       "description": "Override the daily hard token limit once",
       "template": "!`bash box/scripts/tools/limits.sh --force 2>&1 | tail -5`\nThe output above shows the force-flag result. Acknowledge in one line."
-    },
-    "continue": {
-      "description": "Continue work from the latest handoff (LATEST.md)",
-      "template": "Read box/sessions/handoffs/LATEST.md (or <Project>/box/sessions/handoffs/LATEST.md inside a project) and follow its Next steps in order. Do not re-ask settled questions. Report what you are continuing."
     },
     "grill": {
       "description": "Grill the user about a plan/idea before building. $ARGUMENTS = topic",

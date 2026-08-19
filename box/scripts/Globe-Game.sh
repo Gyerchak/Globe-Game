@@ -43,7 +43,7 @@ fi
 SESSIONS_DIR="$PROJ_DIR/box/sessions"
 CFG_DIR="$PROJ_DIR/box/cfg"
 DATA_DIR="$PROJ_DIR/box/sessions"
-mkdir -p "$SESSIONS_DIR" "$CFG_DIR/opencode" "$DATA_DIR/handoffs" "$DATA_DIR/notes" "$DATA_DIR/limitlogs" "$DATA_DIR/memory" "$DATA_DIR/exports" "$PROJ_DIR/box/backup" "$PROJ_DIR/box/waste"
+mkdir -p "$SESSIONS_DIR" "$CFG_DIR/opencode" "$DATA_DIR/notes" "$DATA_DIR/limitlogs" "$DATA_DIR/memory" "$DATA_DIR/exports" "$PROJ_DIR/box/backup" "$PROJ_DIR/box/waste"
 
 bash "$PROJ_DIR/box/scripts/tools/tmpbox.sh" ensure
 
@@ -87,23 +87,21 @@ cd "$PROJ_DIR"
 printf '\033]0;OpenCodeBox: $PROJ_NAME\007\033]2;OpenCodeBox: $PROJ_NAME\007'
 
 # Capture this terminal's exact X window id so the button app can target it
-# precisely. Poll the window list for OUR terminal (title contains
-# "OpenCodeBox"); fall back to the active window when it is a terminal.
-( for i in $(seq 1 20); do
-    WID=""
-    for w in $(xprop -root _NET_CLIENT_LIST 2>/dev/null | grep -oE '0x[0-9a-fA-F]+'); do
-      title="$(xprop -id "$w" WM_NAME 2>/dev/null | grep -oiE 'opencodebox' | head -1)"
-      [ -n "$title" ] && WID="$w" && break
-    done
-    [ -n "$WID" ] && { echo "$WID" > "$SESSIONS_DIR/opencode/terminal.wid"; exit 0; }
-    sleep 0.5
-  done
-  WID="$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | grep -oE '0x[0-9a-fA-F]+' | head -1)"
-  cls="$(xprop -id "$WID" WM_CLASS 2>/dev/null | tr 'A-Z' 'a-z')"
-  case "$cls" in *konsole*|*alacritty*|*kitty*|*xterm*|*foot*|*wezterm*|*terminator*|*gnome-terminal*|*lxterminal*|*sakura*|*tilix*)
-    echo "$WID" > "$SESSIONS_DIR/opencode/terminal.wid" ;;
-  esac
-) &
+# precisely. The terminal becomes the ACTIVE window right after it opens —
+# poll it (verify the window class is a terminal emulator) before the app
+# takes focus.
+rm -f "$SESSIONS_DIR/opencode/terminal.wid"
+( for i in $(seq 1 60); do
+    WID="$(xprop -root _NET_ACTIVE_WINDOW 2>/dev/null | grep -oE '0x[0-9a-fA-F]+' | head -1)"
+    if [ -n "$WID" ]; then
+      cls="$(xprop -id "$WID" WM_CLASS 2>/dev/null | tr 'A-Z' 'a-z')"
+      case "$cls" in *konsole*|*alacritty*|*kitty*|*xterm*|*foot*|*wezterm*|*terminator*|*gnome-terminal*|*lxterminal*|*sakura*|*tilix*)
+        echo "$WID" > "$SESSIONS_DIR/opencode/terminal.wid"
+        exit 0 ;;
+      esac
+    fi
+    sleep 0.25
+  done ) &
 
 # Buttons cheat-sheet: the box buttons are slash commands + keybinds + the
 # button app that opens in your browser.
@@ -115,12 +113,7 @@ echo "│  keybinds: Ctrl+X f favourites · Ctrl+X t thinking ·        │"
 echo "│            Shift+Tab switch agent · /boxhelp = full list    │"
 echo "╰─────────────────────────────────────────────────────────────╯"
 
-PROMPT_ARGS=()
-case "$ARG2" in
-  continue) PROMPT_ARGS=(--prompt "Continue the work. Read $DATA_DIR/handoffs/LATEST.md and follow its 'Next steps' in order. Do not re-ask settled questions.") ;;
-  new) ;;
-  *) PROMPT_ARGS=(--continue) ;;
-esac
+PROMPT_ARGS=(--continue)
 
 if [ -r /dev/tty ]; then
   opencode2 --standalone --auto "${PROMPT_ARGS[@]}" </dev/tty &
@@ -133,20 +126,11 @@ echo $! > "$SESSIONS_DIR/opencode/opencode.pid"
 # setups, live status. Fallbacks: browser app (boxapp.py), then terminal bar.
 ( sleep 2
   if python3 -c "import PyQt5" >/dev/null 2>&1 && [ -n "${DISPLAY:-}" ]; then
-    nohup python3 "$PROJ_DIR/box/scripts/tools/boxgui.py" >/dev/null 2>&1 &
+    env -u XDG_CONFIG_HOME -u XDG_DATA_HOME nohup python3 "$PROJ_DIR/box/scripts/tools/boxgui.py" >/dev/null 2>&1 &
   elif command -v xdg-open >/dev/null 2>&1; then
-    nohup python3 "$PROJ_DIR/box/scripts/tools/boxapp.py" >/dev/null 2>&1 &
+    env -u XDG_CONFIG_HOME -u XDG_DATA_HOME nohup python3 "$PROJ_DIR/box/scripts/tools/boxapp.py" >/dev/null 2>&1 &
   else
     detect_terminal >/dev/null 2>&1 && spawn_terminal "$PROJ_DIR/box/scripts/tools/buttonbar.sh"
   fi ) &
-
-nohup bash "$PROJ_DIR/box/scripts/tools/auto-handoff.sh" --watch \
-  --name "$PROJ_NAME" \
-  --data-dir "$SESSIONS_DIR" \
-  --handoffs "$DATA_DIR/handoffs" \
-  --pidfile "$SESSIONS_DIR/opencode/opencode.pid" \
-  --workdir "$PROJ_DIR" \
-  --restart-cmd "$PROJ_DIR/box/scripts/$PROJ_NAME.sh launch continue" \
-  >/dev/null 2>&1 &
 
 wait
