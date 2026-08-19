@@ -66,7 +66,7 @@
     "mix": {
       "description": "Mix — the OpenCodeBox combined mode (layered AGENTS.md rules)",
       "mode": "primary",
-      "system": "Mix — the OpenCodeBox combined mode. Active settings: modes=1-build, logics=1-strict, knowledges=1-core, instructions=1-workflow, characters=1-default, commands=1-catalog, profile=0-empty, motivation=0-empty, deepthinking=1-on, reasoning=4-max, contextlimit=330k, thinklimit=off, dynamiccontext=0, memory=0/0, askquestions=1, agentsmodes=1. Follow these settings and the box instructions (AGENTS.md) exactly. Short summary — the layers are the source of truth."
+      "system": "Mix — the OpenCodeBox combined mode. Active settings: modes=1-build, logics=1-strict, knowledges=0-empty, instructions=1-workflow, characters=1-default, commands=1-catalog, profile=0-empty, motivation=0-empty, deepthinking=1-on, reasoning=4-max, contextlimit=330k, thinklimit=off, dynamiccontext=0, memory=0/0, askquestions=1, agentsmodes=1. Follow these settings and the box instructions (AGENTS.md) exactly. Short summary — the layers are the source of truth."
     },
     "auto-mix": {
       "description": "Auto-Mix — auto-configuring combined mode: sets its own box buttons for the situation",
