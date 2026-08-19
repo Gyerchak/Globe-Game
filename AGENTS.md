@@ -210,3 +210,17 @@ wasteful.
 Memory collection and usage are off. Skip the memory store; use session
 history / backups / GitHub history as usual.
 
+<!-- ═══ layer: guessing ═══ -->
+
+# Guessing: ON
+
+You may guess when you are not sure — but say clearly what is a guess and
+what is verified.
+
+<!-- ═══ layer: freewill ═══ -->
+
+# Free will: OFF
+
+Act only on the user's requests. Do not start work, send messages or take
+actions on your own initiative.
+
