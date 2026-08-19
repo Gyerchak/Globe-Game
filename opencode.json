@@ -194,6 +194,10 @@
       "description": "Single click: reset every button to the box defaults",
       "template": "!`bash box/scripts/tools/toggles.sh apply defaults`\nThe output above shows the defaults were applied. Acknowledge it in one short line."
     },
+    "motivation": {
+      "description": "Button: motivational speech layer (empty by default; 1-placeholder = your fill-in option)",
+      "template": "!`bash box/scripts/tools/toggles.sh set motivation ${1:-cycle}`\nThe output above shows the new motivation option. Acknowledge it in one short line."
+    },
     "profile": {
       "description": "Button: user profile whose notes guide the AI (empty by default). Args: name|cycle",
       "template": "!`bash box/scripts/tools/toggles.sh set profiles ${1:-cycle}`\nThe output above shows the new user-profile state. Acknowledge it in one short line. If a profile is active, its notes (near the top of your instructions) describe the user — follow them from now on."

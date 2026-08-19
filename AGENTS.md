@@ -1,7 +1,3 @@
-
-<!-- (your speech goes here) -->
-
-
 <!-- ═══════════════════════════════════════════════════════════════════
      GENERATED FILE — do not edit by hand.
      Source of truth: box/agents/ (layers + ACTIVE state + MOTIVATION.md)
