@@ -127,7 +127,12 @@ echo "│  keybinds: Ctrl+X f favourites · Ctrl+X t thinking ·        │"
 echo "│            Shift+Tab switch agent · /boxhelp = full list    │"
 echo "╰─────────────────────────────────────────────────────────────╯"
 
-PROMPT_ARGS=(--continue)
+# Only --continue when this project already HAS sessions. With an empty
+# session DB the TUI routes to the placeholder session "dummy" and every API
+# call is rejected (Expected a string starting with "ses", got "dummy").
+PROMPT_ARGS=()
+HAVE_SESSIONS="$(sqlite3 "$SESSIONS_DIR/opencode/opencode.db" "select count(*) from session_v2" 2>/dev/null || echo 0)"
+[ "$HAVE_SESSIONS" != "0" ] && PROMPT_ARGS=(--continue)
 
 if [ -r /dev/tty ]; then
   opencode2 --standalone --auto "${PROMPT_ARGS[@]}" </dev/tty &
