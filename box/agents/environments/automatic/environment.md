@@ -3,7 +3,7 @@
 ## Where the agent is placed
 
 - OpenCodeBox root: /run/media/hubertg/SONIC/OpenCodeBox
-- opencode2: /home/hubertg/.opencode/bin/opencode2 (opencode2 v0.0.0-beta-17519)
+- opencode2: /home/hubertg/.opencode/bin/opencode2 (opencode2 v0.0.0-beta-18999)
 
 ## System / PC
 

@@ -11,7 +11,7 @@
 - Shell: zsh (default), bash for scripts
 - Tools available: git, gh CLI, cmake/make, g++ (C++20), python3 (3.14),
   sqlite3, jq, xprop — and opencode2 at ~/.opencode/bin/opencode2
-- opencode2 version: 0.0.0-beta-17519 (beta channel)
+- opencode2 version: 0.0.0-beta-18999 (beta channel)
 - GPU/creativity: ComfyUI, Vulkan available (see preferences.md)
 - Drive layout: projects live under /run/media/hubertg/SONIC/OpenCodeBox/
 
